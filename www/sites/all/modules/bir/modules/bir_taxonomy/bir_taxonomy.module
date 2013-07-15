@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Module file for bir taxonomy.
+ */
+
+/**
+ * Returns vocabulary based on on key or name.
+ */
+function bir_taxonomy_get_vocabulary($name = NULL, $machine = TRUE) {
+  if ($machine) {
+    $object = current(taxonomy_vocabulary_load_multiple(NULL, array('machine_name' => trim($name), 'module' => 'bir_taxonomy')));
+    if ($object === FALSE) {
+      return;
+    }
+    return $object;
+  }
+  if (!is_null($name)) {
+    $object = current(taxonomy_vocabulary_load_multiple(NULL, array('name' => trim($name), 'module' => 'bir_taxonomy')));
+    if ($object === FALSE) {
+      return;
+    }
+    return $object;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Return term.
+ */
+function bir_taxonomy_get_term($vid, $name) {
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->propertyCondition('vid', $vid)
+    ->propertyCondition('name', trim($name))
+    ->execute();
+
+  $tid = array_keys($result['taxonomy_term']);
+  $term = current(taxonomy_term_load_multiple($tid));
+
+  return !empty($term) ? $term : FALSE;
+}
+
+/**
+ * Accepts an array of vocabulary terms with vocabulary as the first array.
+ */
+function bir_taxonomy_vocabulary_terms_create($vocabulary_terms) {
+
+  foreach ($vocabulary_terms as $array) {
+    $object = (object) $array;
+    // If this is vocabulary.
+    if (isset($object->machine_name)) {
+      if (!$vocabulary = bir_taxonomy_get_vocabulary($object->machine_name)) {
+        taxonomy_vocabulary_save($object);
+        $vocabulary = $object;
+        unset($object);
+      }
+    }
+    else {
+      // Object is a term.
+      if (!bir_taxonomy_get_term($vocabulary->vid, $object->name)) {
+        if (!empty($object->parent)) {
+          $parent = bir_taxonomy_get_term($vocabulary->vid, $object->parent);
+          $object->parent = array($parent->tid);
+        }
+        else {
+          $object->parent = array(0);
+        }
+        $object->vid = $vocabulary->vid;
+        taxonomy_term_save($object);
+      }
+    }
+  }
+
+  unset($vocabulary_terms);
+
+  return;
+}

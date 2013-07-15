@@ -1,0 +1,442 @@
+<?php
+
+/**
+ * @file
+ * BIR - Contains functions common to Biodiversity Image Repository
+ */
+
+/**
+ * Implements hook_init().
+ *
+ * Used for intercepting url to determine if services is being called via FURI.
+ */
+function bir_init() {
+
+  // Add superfish.
+  drupal_add_js(libraries_get_path('superfish') . '/superfish.js');
+
+  // Redirect if calling services.
+  bir_services_call();
+
+  return;
+}
+
+/**
+ * Parses URL to determine if service being called.
+ */
+function bir_services_call() {
+
+  // Explode url.
+  $parts = explode('/', current_path());
+
+  // Set everything to lower case just in case.
+  $parts = array_map('strtolower', $parts);
+
+  // If parts[2] not set, no further action needed.
+  if (!isset($parts[2])) {
+    return;
+  }
+
+  // If part[0] is taxonomy, change to handle services. Only handling terms.
+  if ($parts[0] == 'taxonomy') {
+    array_shift($parts);
+    $parts[0] = 'taxonomy_term';
+  }
+
+  // Get resources. If resource does not match part[0].
+  $resources = module_invoke_all('services_resources');
+  if (!isset($resources[$parts[0]])) {
+    return;
+  }
+
+  // Get formatters, if formatter not allowed, no futher action required.
+  $formatters = rest_server_response_formatters();
+  if (!isset($formatters[$parts[2]])) {
+    return;
+  }
+
+  // If parts 3 & 4 exist, pass on image sizes.
+  $options = array();
+  if (!empty($parts[3])) {
+    $options['query'] = array(
+      'width' => $parts[3],
+      'height' => !empty($parts[4]) ? $parts[4] : $parts[3],
+    );
+  }
+
+  $api_url = "$base_url/bir-api/$parts[0]/$parts[1].$parts[2]";
+  $code = 301;
+  drupal_goto($api_url, $options, $code);
+
+  return;
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * When viewing lists for view/specimen images the admin menu shows
+ * if logged in as admin. This function simply removes it.
+ */
+function bir_page_alter(&$page) {
+  if (isset($_GET['format']) && $_GET['format'] == 'simple') {
+    unset($page['page_bottom']['admin_menu']);
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function bir_menu() {
+  $items = array();
+
+  $items['admin/config/content/bir'] = array(
+    'title' => 'BIR',
+    'description' => 'Settings for BIR module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bir_admin_settings'),
+    'file' => 'bir.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/config/content/location/main'] = array(
+    'title' => 'Main settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+/**
+ * Array of node types for bir module.
+ */
+function bir_get_node_types() {
+  $types = &drupal_static(__FUNCTION__);
+  if (!isset($types)) {
+    $bir_node_types = array(
+      'bir_image' => array(),
+      'bir_specimen' => array(),
+      'bir_view' => array(),
+      'bir_locality' => array(),
+      'bir_album' => array(),
+    );
+    foreach (node_type_get_types() as $type => $array) {
+      if (isset($bir_node_types[$type])) {
+        $types[$type] = $array;
+      }
+    }
+  }
+
+  return $types;
+}
+
+/**
+ * Perform alterations on generic bir content forms.
+ *
+ * @todo Eventually remove morphbank fields
+ */
+function bir_form_alter(&$form, &$form_state, $form_id) {
+
+  if (empty($form_state['node'])) {
+    return;
+  }
+
+  $node = $form_state['node'];
+  $types = bir_get_node_types();
+  if (!isset($types[$node->type])) {
+    return;
+  }
+
+  // Hide fields we do not want exposed on forms.
+  $hidden_fields = array(
+    'boid',
+    'bogid',
+    'furi',
+    'image_count',
+    'bogid',
+    'boid',
+    'bouid',
+    'olduid',
+    'oldgid',
+    'bocontributor',
+    'external_id',
+    'publication_id',
+    'taxon_author_id',
+    'taxon_hierarchy',
+    'name_source_tmp',
+  );
+  foreach ($hidden_fields as $key => $value) {
+    if (isset($form[$value])) {
+      $form[$value]['#type'] = 'hidden';
+    }
+  }
+
+  unset($form['group_content_access'][LANGUAGE_NONE]['#options'][0]);
+  unset($form['group_content_access'][LANGUAGE_NONE]['#options']['_none']);
+
+  bir_fix_group_ref_field($form, $form_state, $form_id);
+
+  if ($node->type != 'bir_album') {
+    bir_node_set_contributor_ajax($form, $form_state, $node);
+  }
+}
+
+/**
+ * Fixes og_group_ref field for our needs.
+ *
+ * OG Groups created an extra field for handling users who have the ability to
+ * edit nodes. It used an admin group field to show what groups are available
+ * to the user, allows them to select and change it. Instead, this function
+ * simply allows a direct change to the node group data
+ */
+function bir_fix_group_ref_field(&$form, &$form_state, $form_id) {
+
+  $group_ref = isset($form['og_group_ref'][LANGUAGE_NONE][0]['admin']) ? 'admin' : 'default';
+
+  if ($group_ref == 'admin') {
+    $form['og_group_ref'][LANGUAGE_NONE][0]['default']['#options'] = $form['og_group_ref'][LANGUAGE_NONE][0]['admin']['#options'];
+    $form['og_group_ref'][LANGUAGE_NONE][0]['default']['#default_value'] = $form['og_group_ref'][LANGUAGE_NONE][0]['admin']['#default_value'];
+    unset($form['og_group_ref'][LANGUAGE_NONE][0]['admin']);
+  }
+
+  unset($form['og_group_ref'][LANGUAGE_NONE][0]['default']['#options']['_none']);
+
+  bir_fix_enity_reference_list($form['og_group_ref'][LANGUAGE_NONE][0]['default']['#options']);
+  $form['og_group_ref'][LANGUAGE_NONE][0]['default']['#multiple'] = 0;
+}
+
+/**
+ * Decode entities in Entity reference dropdown and sort alphabetically.
+ *
+ * @see http://drupal.org/node/1665818
+ */
+function bir_fix_enity_reference_list(&$field) {
+  asort($field);
+  foreach ($field as &$option) {
+    $option = decode_entities($option);
+  }
+}
+
+/**
+ * Add contributor ajax field if not an album.
+ */
+function bir_node_set_contributor_ajax(&$form, &$form_state, $node) {
+  global $user;
+
+  $form['og_group_ref'][LANGUAGE_NONE][0]['default']['#title'] = "Group audience";
+  $form['og_group_ref'][LANGUAGE_NONE][0]['default']['#required'] = 1;
+  $form['og_group_ref'][LANGUAGE_NONE][0]['default']['#ajax'] = array(
+    'event' => 'change',
+    'callback' => 'bir_contributor_ajax_callback',
+    'wrapper' => 'contributor_replace',
+  );
+
+  $gid = bir_get_gid($form_state, $node);
+  $options = bir_contributor_ajax_options($gid);
+  $form['contributor'][LANGUAGE_NONE]['#options'] = $options;
+  $form['contributor'][LANGUAGE_NONE]['#prefix'] = '<div id="contributor_replace">';
+  $form['contributor'][LANGUAGE_NONE]['#suffix'] = '</div>';
+  $form['contributor'][LANGUAGE_NONE]['#default_value'] = !is_null($node->uid) ? array($node->uid) : array($user->uid);
+  $form['contributor']['#weight'] = 80;
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function bir_node_insert($node) {
+  $types = bir_get_node_types();
+  if (!isset($types[$node->type])) {
+    return;
+  }
+
+  // Set furi field. Not empty during migration.
+  if (empty($node->furi[LANGUAGE_NONE][0]['value'])) {
+    $node->furi[LANGUAGE_NONE][0]['value'] = $base_url . '/node/' . $node->nid;
+  }
+
+  // Remove paretheses from title
+  // (due to how we look up existing view/locality in forms).
+  $node->title = preg_replace('/([()]+)/i', '', $node->title);
+
+  field_attach_update('node', $node);
+}
+
+/**
+ * Hide the old user id from morphbank.
+ *
+ * @todo Remove this field eventually.
+ */
+function bir_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
+  $form['olduid']['#access'] = FALSE;
+}
+
+/**
+ * Hide certain filds on group forms so users cannot change them.
+ */
+function bir_form_group_node_form_alter(&$form, &$form_state, $form_id) {
+  $form['group_group']['#access'] = FALSE;
+  $form['oldgid']['#access'] = FALSE;
+}
+
+/**
+ * Selects only contibutor to be returned for re-rendering.
+ *
+ * @return array
+ *   renderable array (the contributor dropdown)
+ */
+function bir_contributor_ajax_callback($form, $form_state) {
+  return $form['contributor'];
+}
+
+/**
+ * Function to populate contributor dropdown based on group id.
+ *
+ * @param int $gid
+ *   represents group chosen in og_group_ref.
+ *
+ * @return array
+ *   array of options
+ */
+function bir_contributor_ajax_options($gid = NULL) {
+  if (is_null($gid)) {
+    return array('_none' => '- None -');
+  }
+
+  $return = &drupal_static(__FUNCTION__, array());
+  if (empty($return)) {
+    $return = _get_users_in_group($gid);
+  }
+
+  return !empty($return) ? $return : array('_none' => '- None -');
+}
+
+/**
+ * Get all users of a group.
+ */
+function _get_users_in_group($gid) {
+  $query = db_select('users', 'u');
+  $query->join('og_membership', 'ogm', "ogm.gid = :gid AND u.uid = ogm.etid AND ogm.entity_type = 'user'", array(':gid' => $gid));
+  $query->condition('u.uid', 0, '<>')
+      ->condition('u.status', 1, '=')
+      ->fields('u', array('uid', 'name'));
+  $results = $query->execute()->fetchAllKeyed();
+  return $results;
+}
+
+/**
+ * Return group id from node forms.
+ */
+function bir_get_gid($form_state, $node) {
+  if (isset($form_state['values']['og_group_ref'])) {
+    $gid = $form_state['values']['og_group_ref'][LANGUAGE_NONE][0]['target_id'];
+  }
+  elseif (!empty($node->og_group_ref[LANGUAGE_NONE][0]['target_id'])) {
+    $gid = $node->og_group_ref[LANGUAGE_NONE][0]['target_id'];
+  }
+  else {
+    global $user;
+    $account = clone($user);
+    $content_groups = og_get_entity_groups('user', $account);
+    $gid = array_shift(array_values($content_groups['node']));
+  }
+
+  return $gid;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function bir_ctools_plugin_api($owner, $api) {
+  if ($owner == 'services' && $api == 'services') {
+    return array(
+      'version' => 3,
+    );
+  }
+}
+
+/**
+ * Implements hook_default_services_endpoint().
+ */
+function bir_default_services_endpoint() {
+  $endpoints = array();
+
+  $endpoint = new stdClass();
+  $endpoint->disabled = FALSE; /* Edit this to true to make a default endpoint disabled initially */
+  $endpoint->api_version = 3;
+  $endpoint->name = 'bir_api';
+  $endpoint->server = 'rest_server';
+  $endpoint->path = 'bir-api';
+  $endpoint->authentication = array(
+    'services' => 'services',
+  );
+  $endpoint->server_settings = array();
+  $endpoint->resources = array(
+    'node' => array(
+      'operations' => array(
+        'retrieve' => array(
+          'enabled' => 1,
+        ),
+      ),
+    ),
+  );
+  $endpoint->debug = 0;
+
+  $endpoints[] = $endpoint;
+
+  return $endpoints;
+}
+
+/**
+ * Returns path data for View.
+ */
+function bir_get_view_content_path($output) {
+  $path_array = explode(',', $output);
+
+  $contentype = $path_array[1];
+
+  switch ($contentype) {
+    case "bir_image":
+      $path = "single_image";
+      $path2 = "/" . $path_array[2] . "/" . $path_array[3];
+      break;
+
+    case "bir_specimen":
+      $path = "single-specimen";
+      $path2 = "/" . $path_array[2];
+      break;
+
+    case "bir_view":
+      $path = "single-view";
+      $path2 = "/" . $path_array[2];
+      break;
+
+    case "bir_locality":
+      $path = "single-location";
+      $path2 = "/" . $path_array[2];
+      break;
+
+  }
+  return array($path, $path2);
+}
+
+/**
+ * Filter browse results.
+ */
+function bir_check_browse_access($gid, $access, $type) {
+  if ($type == 'bir_album') {
+    return TRUE;
+  }
+
+  if (empty($gid) || empty($access)) {
+    return FALSE;
+  }
+
+  if (og_user_access('node', $gid, 'access content')) {
+    return TRUE;
+  }
+
+  // Value of 2 means private.
+  if ($access != 2) {
+    return TRUE;
+  }
+
+  return FALSE;
+}

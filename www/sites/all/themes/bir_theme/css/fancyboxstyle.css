@@ -1,0 +1,23 @@
+
+
+
+#contentFB a img {
+	border: 1px solid #BBB;
+	padding: 2px;
+	margin: 10px 20px 10px 0;
+	vertical-align: top;
+}
+
+#contentFBp {
+	margin: 0;
+	padding: 7px 0;
+}
+
+#contentFB a img.last {
+	margin-right: 0;	
+}
+
+#contentFB ul {
+	margin-bottom: 24px;
+	padding-left: 30px;
+}

@@ -1,0 +1,46 @@
+; $Id$
+name = BIR Main
+description = Provides functionality and creation of Biodiversity Image Repository.
+package = Biodiversity Image Repository
+core = 7.x
+version = 7.x-1.0-dev
+
+configure = admin/config/content/bir
+
+dependencies[] = auto_nodetitle
+dependencies[] = context
+dependencies[] = date
+dependencies[] = ds
+dependencies[] = entity
+dependencies[] = entityreference
+dependencies[] = entityreference_prepopulate
+dependencies[] = exif
+dependencies[] = facetapi
+dependencies[] = features
+dependencies[] = field_collection
+dependencies[] = getlocations
+dependencies[] = globalredirect
+dependencies[] = jquery_update
+dependencies[] = libraries
+dependencies[] = media_gallery
+dependencies[] = og
+dependencies[] = panels
+dependencies[] = pathauto
+dependencies[] = profile2
+dependencies[] = quicktabs
+dependencies[] = save_draft
+dependencies[] = search_api
+dependencies[] = search_api_page
+dependencies[] = search_api_solr
+dependencies[] = services
+dependencies[] = shadowbox
+dependencies[] = taxonomy
+dependencies[] = uuid
+dependencies[] = views
+dependencies[] = views_slideshow
+dependencies[] = wysiwyg
+
+files[] = bir.module
+files[] = bir.admin.inc
+files[] = bir.install
+

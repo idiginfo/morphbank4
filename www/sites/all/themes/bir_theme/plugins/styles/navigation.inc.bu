@@ -1,0 +1,34 @@
+<?php
+// $Id: navigation.inc,v 1.1.2.1 2009/07/15 22:12:19 Exp $
+
+/**
+* @file
+* Definition of the 'bir' panel style.
+*/
+
+// ---------------------------------------------------------------------------
+// Panels hooks.
+
+/**
+* Implementation of hook_panels_style_info().
+*/
+function bir_navigation_panels_styles() {
+  return array(
+    'title' => t('Small navigation'),
+    'description' => t('Display primary links navigation'),
+    'render pane' => 'navigation_style_render_pane',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Panels style plugin callbacks.
+
+/**
+* Render callback.
+*
+* @ingroup themeable
+*/
+function theme_navigation_style_render_pane($content, $pane, $display) {
+  return $content->content;
+}
+?>

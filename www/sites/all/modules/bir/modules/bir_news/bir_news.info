@@ -1,0 +1,13 @@
+; $Id$
+name = BIR News
+description = Creates node type for Biodiversity Image Repository News.
+package = Biodiversity Image Repository
+core = 7.x
+version = 7.x-1.0-dev
+
+; Base module files
+files[] = bir_news.module
+files[] = bir_news.install
+
+; Tests
+files[] = bir_news.test

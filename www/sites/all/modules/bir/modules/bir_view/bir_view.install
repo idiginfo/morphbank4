@@ -1,0 +1,403 @@
+<?php
+
+/**
+ * @file
+ * Installation file for BIR View.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bir_view_install() {
+  _bir_view_create_node_type();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_view_uninstall() {
+  _bir_view_delete_node_type();
+}
+
+/**
+ * Create view node type.
+ */
+function _bir_view_create_node_type() {
+  // Variables to set defaults on forms.
+  variable_set('additional_settings__active_tab_bir_view', 'edit-menu');
+  variable_set('comment_bir_view', '1');
+  variable_set('menu_options_bir_view', array('navigation'));
+  variable_set('menu_parent_bir_view', 'navigation:6');
+  variable_set('node_options_bir_view', array('status'));
+  variable_set('node_preview_bir_view', 0);
+  variable_set('node_submitted_bir_view', 0);
+
+  $t = get_t();
+  // Define the node type.
+  $node = array(
+    'type' => 'bir_view',
+    'name' => $t('BIR View'),
+    'base' => 'node_content',
+    'description' => $t('A view captures information about an image.'),
+  );
+  $content_type = node_type_set_defaults($node);
+  node_type_save($content_type);
+  og_create_field(OG_AUDIENCE_FIELD, 'node', 'bir_view');
+  og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'bir_view');
+
+  // Create entity reference fields.
+  _bir_view_create_entity_references();
+
+  // Loop through fields array and create field:instance.
+  $field_info = _bir_view_fields_info();
+  foreach ($field_info as $key => $field_array) {
+    if (!field_info_field($key)) {
+      $field_info[$key]['field']['field_name'] = $key;
+      field_create_field($field_info[$key]['field']);
+    }
+
+    if (!field_info_instance('node', $key, 'bir_view')) {
+      $instance = $field_info[$key]['instance'];
+      $instance += array(
+        'field_name' => $key,
+        'bundle' => 'bir_view',
+        'entity_type' => 'node',
+      );
+      field_create_instance($instance);
+    }
+  }
+}
+
+/**
+ * Delete view node type.
+ */
+function _bir_view_delete_node_type() {
+  // Temporarily enable the node type.
+  // See: https://drupal.org/node/943588#comment-4754844.
+  db_update('node_type')
+    ->fields(array(
+      'disabled' => 0,
+    ))
+    ->condition('type', 'bir_view', '=')
+    ->condition('disabled', 1, '=')
+    ->execute();
+
+  // Clear the node type cache.
+  node_type_cache_reset();
+
+  // Remove all variables defined during install.
+  variable_del('additional_settings__active_tab_bir_view');
+  variable_del('comment_bir_view');
+  variable_del('menu_options_bir_view');
+  variable_del('menu_parent_bir_view');
+  variable_del('node_options_bir_view');
+  variable_del('node_preview_bir_view');
+  variable_del('node_submitted_bir_view');
+
+  // Gather all the content created.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'bir_view'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once.
+  node_delete_multiple($nids);
+
+  // Loop over any remaining field instances attached to the node.
+  $instances = field_info_instances('node', 'bir_view');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete content type.
+  node_type_delete('bir_view');
+
+  // Purge all field infromation.
+  field_purge_batch(1000);
+}
+
+/**
+ * Set up field installation.
+ */
+function _bir_view_fields_info() {
+  $t = get_t();
+  return array(
+    'imaging_technique' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'imaging_technique', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Imaging technique'),
+        'required' => FALSE,
+        'description' => $t('Select imaging technique'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 2)),
+      ),
+    ),
+    'imaging_preparation_technique' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'imaging_preparation_technique', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Imaging preparation technique'),
+        'required' => FALSE,
+        'description' => $t('Select imaging preparation technique'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 3)),
+      ),
+    ),
+    'specimen_part' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'specimen_part', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Specimen part'),
+        'required' => FALSE,
+        'description' => $t('Select specimen part'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 4)),
+      ),
+    ),
+    'view_angle' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'view_angle', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('View angle'),
+        'required' => FALSE,
+        'description' => $t('Select view angle'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 5)),
+      ),
+    ),
+    'developmental_stage' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'developmental_stage', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Developmental stage'),
+        'required' => FALSE,
+        'description' => $t('Select developmental stage'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 6)),
+      ),
+    ),
+    'sex' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'sex', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Sex'),
+        'required' => FALSE,
+        'description' => $t('Select sex'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 7)),
+      ),
+    ),
+    'form' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'form', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Form'),
+        'required' => FALSE,
+        'description' => $t('Select form'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 8)),
+      ),
+    ),
+    'furi' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Foreign object URI'),
+        'cardinality' => 1,
+        'type' => 'text_textfield',
+        'display' => array('default' => array('type' => 'hidden', 'weight' => 10)),
+      ),
+    ),
+    'image_count' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Image count'),
+        'cardinality' => 1,
+        'type' => 'number',
+        'widget' => array('type' => 'number'),
+        'display' => array('default' => array('type' => 'hidden', 'weight' => 12)),
+      ),
+    ),
+  );
+}
+
+/**
+ * Create entity reference fields.
+ */
+function _bir_view_create_entity_references() {
+  $t = get_t();
+
+  $entityreference_fields = array(
+    array(
+      'field_name' => 'contributor',
+      'label' => $t('Contributor'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'users' => array(
+          'table' => 'users',
+          'columns' => array(
+            'target_id' => 'uid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array(),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'user',
+      ),
+      'translatable' => 0,
+    ),
+    array(
+      'field_name' => 'standard_image',
+      'label' => $t('Standard Image'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'node' => array(
+          'table' => 'node',
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array('bir_image' => 'bir_image'),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+      'translatable' => 0,
+    ),
+  );
+
+  foreach ($entityreference_fields as $field) {
+    if (!field_info_field($field['field_name'])) {
+      field_create_field($field);
+    }
+  }
+
+  $entityreference_instances = array(
+    array(
+      'field_name' => 'contributor',
+      'entity_type' => 'node',
+      'bundle' => 'bir_view',
+      'label' => 'Contributor',
+      'cardinality' => 1,
+      'description' => $t('Select Contributor'),
+      'widget' => array(
+        'type' => 'options_select',
+        'module' => 'options',
+      ),
+      'settings' => array(
+        'target_type' => 'user',
+        'handler_settings' => array('target_bundles' => array()),
+      ),
+    ),
+    array(
+      'field_name' => 'standard_image',
+      'entity_type' => 'node',
+      'bundle' => 'bir_view',
+      'label' => 'Standard Image',
+      'cardinality' => 1,
+      'description' => $t('Standard Image associated with object.'),
+      'widget' => array(
+        'type' => 'entityreference_autocomplete',
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array('bir_image' => 'bir_image'),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+    ),
+  );
+
+  foreach ($entityreference_instances as $instance) {
+    if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+      field_create_instance($instance);
+    }
+  }
+
+  return;
+}

@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * @file
+ * Install file for Biological Image Repository.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bir_install() {
+  // Create roles - wait to see if we are doing this.
+  // _bir_update_og_roles();
+  // Create group node type.
+  _bir_create_group_node_type();
+
+  // Update module weight so hoof_form_alter on BIR works correctly.
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'bir' and type = 'module'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_uninstall() {
+  // Set organic group roles back to normal.
+  _bir_delete_roles();
+  // Delete all nodes and node type for group.
+  _bir_delete_group_node_type();
+}
+
+
+/**
+ * Updates OG Roles so required roles for BIR are created.
+ */
+function _bir_update_og_roles() {
+  $new_roles = array(
+    'lead scientist',
+    'guest',
+  );
+
+  foreach($new_roles as $name) {
+    $role = og_role_create($name, 'node', 0, 'group');
+    og_role_save($role);
+  }
+}
+
+/**
+ * Delete OG roles created during install.
+ */
+function _bir_delete_roles() {
+  $roles = og_roles('node', 'group', 0);
+
+  foreach ($roles as $rid => $name) {
+    if ($name == 'guest' || $name == 'lead scientist') {
+      db_delete('og_role')->condition('name', $name)->execute();
+      db_delete('og_users_roles')->condition('rid', $rid)->execute();
+      db_delete('og_role_permission')->condition('rid', $rid)->execute();
+    }
+  }
+}
+
+/**
+ * Create node type for group.
+ */
+function _bir_create_group_node_type() {
+  variable_set('additional_settings__active_tab_group', '');
+  variable_set('node_preview_group', 0);
+  variable_set('node_options_group', array('status'));
+  variable_set('node_submitted_group', 1);
+  variable_set('comment_group', 0);
+  variable_set('menu_options_group', array('main-menu'));
+  variable_set('menu_parent_group', 'main-menu:0');
+  variable_set('og_group_type_group', 1);
+  variable_set('og_group_content_type_group', '');
+  variable_set('target_type_group', 'node');
+  variable_set('target_bundles_group', array());
+
+  $t = get_t();
+  $group = array(
+    'type' => 'group',
+    'name' => $t('Group'),
+    'base' => 'node_content',
+    'description' => $t('A group can be public or private.'),
+    'body_label' => $t('Text'),
+  );
+  $node_type = node_type_set_defaults($group);
+  node_type_save($node_type);
+  og_create_field(OG_ACCESS_FIELD, 'node', 'group');
+
+}
+
+/**
+ * Delete node type group.
+ */
+function _bir_delete_group_node_type() {
+  db_delete('variable')->condition('name', '%_group', 'LIKE')->execute();
+  cache_clear_all('variables', 'cache_bootstrap');
+
+  // Gather all the content created.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'group'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once.
+  node_delete_multiple($nids);
+
+  // Loop over any remaining field instances attached to the node.
+  $instances = field_info_instances('node', 'group');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete content type.
+  node_type_delete('group');
+
+  // Purge all field infromation.
+  field_purge_batch(1000);
+}

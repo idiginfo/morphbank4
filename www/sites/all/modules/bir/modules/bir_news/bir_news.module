@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * BIR News module
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function bir_news_menu() {
+  $items['bir_news'] = array(
+    'page callback' => 'bir_news_page',
+    'access arguments' => array('access content'),
+    'title' => 'BIR News',
+  );
+  return $items;
+}
+
+/**
+ * Custom callback that builds our content and returns it to the browser.
+ */
+function bir_news_page() {
+  $build = array();
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type AND n.status = :status';
+  $result = db_query($sql,
+    array(
+      ':type' => 'bir_news',
+      ':status' => 1,
+    )
+  );
+
+  // Loop through each of our bir_news nodes and instruct node_view
+  // to use our custom "bir_news_list" view.
+  foreach ($result as $row) {
+    $node = node_load($row->nid);
+    $build['node_list'][] = node_view($node, 'bir_news_list');
+  }
+
+  return $build;
+}

@@ -1,0 +1,1054 @@
+<?php
+
+/**
+ * @file
+ * Installation file for BIR Specimen.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bir_specimen_install() {
+  _bir_specimen_create_node_type();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_specimen_uninstall() {
+  _bir_specimen_delete_node_type();
+}
+
+/**
+ * Create node type for specimen.
+ */
+function _bir_specimen_create_node_type() {
+  // Variables to set defaults on forms.
+  variable_set('additional_settings__active_tab_bir_specimen', 'edit-menu');
+  variable_set('comment_bir_specimen', '1');
+  variable_set('menu_options_bir_specimen', array('navigation'));
+  variable_set('menu_parent_bir_specimen', 'navigation:6');
+  variable_set('node_options_bir_specimen', array('status'));
+  variable_set('node_preview_bir_specimen', 0);
+  variable_set('node_submitted_bir_specimen', 0);
+
+  $t = get_t();
+  // Define the node type.
+  $node = array(
+    'type' => 'bir_specimen',
+    'name' => $t('BIR Specimen'),
+    'base' => 'node_content',
+    'description' => $t('A Specimen record contains details about the specimen collected/observed.'),
+  );
+  $content_type = node_type_set_defaults($node);
+  node_type_save($content_type);
+  og_create_field(OG_AUDIENCE_FIELD, 'node', 'bir_specimen');
+  og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'bir_specimen');
+
+  // Create entity references.
+  _bir_specimen_create_entity_references();
+
+  // Loop through fields array and create field:instance.
+  $field_info = _bir_specimen_fields_info();
+  foreach ($field_info as $key => $field_array) {
+    if (!field_info_field($key)) {
+      $field_info[$key]['field']['field_name'] = $key;
+      field_create_field($field_info[$key]['field']);
+    }
+
+    if (!field_info_instance('node', $key, 'bir_specimen')) {
+      $instance = $field_info[$key]['instance'];
+      $instance += array(
+        'field_name' => $key,
+        'bundle' => 'bir_specimen',
+        'entity_type' => 'node',
+      );
+      field_create_instance($instance);
+    }
+  }
+}
+
+/**
+ * Delete node type for specimen.
+ */
+function _bir_specimen_delete_node_type() {
+  // Temporarily enable the node type.
+  // See: https://drupal.org/node/943588#comment-4754844.
+  db_update('node_type')
+    ->fields(array(
+      'disabled' => 0,
+    ))
+    ->condition('type', 'bir_image', '=')
+    ->condition('disabled', 1, '=')
+    ->execute();
+
+  // Clear the node type cache.
+  node_type_cache_reset();
+
+  // Remove all variables defined during install.
+  variable_del('additional_settings__active_tab_bir_specimen');
+  variable_del('comment_bir_specimen');
+  variable_del('menu_options_bir_specimen');
+  variable_del('menu_parent_bir_specimen');
+  variable_del('node_options_bir_specimen');
+  variable_del('node_preview_bir_specimen');
+  variable_del('node_submitted_bir_specimen');
+
+  // Gather all the content created.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'bir_specimen'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once.
+  node_delete_multiple($nids);
+
+  // Loop over any remaining field instances attached to the node.
+  $instances = field_info_instances('node', 'bir_specimen');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete content type.
+  node_type_delete('bir_specimen');
+
+  // Purge all field infromation.
+  field_purge_batch(1000);
+}
+
+/**
+ * Set up field installation.
+ */
+function _bir_specimen_fields_info() {
+  $t = get_t();
+  return array(
+    'basis_of_record' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'basis_of_record', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Basis of record'),
+        'required' => TRUE,
+        'description' => $t('Select basis of record'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 1)),
+      ),
+    ),
+    'sex' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'sex', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Sex'),
+        'required' => FALSE,
+        'description' => $t('Select sex'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 2)),
+      ),
+    ),
+    'form' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'form', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Form'),
+        'required' => FALSE,
+        'description' => $t('Select form'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 3)),
+      ),
+    ),
+    'developmental_stage' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'developmental_stage', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Developmental stage'),
+        'required' => FALSE,
+        'description' => $t('Select developmental stage'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 4)),
+      ),
+    ),
+    'type_status' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'type_status', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Type status'),
+        'required' => TRUE,
+        'description' => $t('Select type status'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 5)),
+      ),
+    ),
+    'preparation_type' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Preparation type'),
+        'required' => FALSE,
+        'description' => $t('Enter preparation type'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 6)),
+      ),
+    ),
+    'individual_count' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Individual count'),
+        'required' => FALSE,
+        'description' => $t('Enter number of individuals'),
+        'widget' => array('type' => 'number'),
+        'display' => array('settings' => array('weight' => 7)),
+      ),
+    ),
+    'scientific_name' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'scientific_name', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Determination scientific name'),
+        'required' => TRUE,
+        'description' => $t('Enter scientific name for specimen'),
+        'widget' => array('type' => 'taxonomy_autocomplete'),
+        'display' => array('settings' => array('weight' => 0)),
+      ),
+    ),
+    'name_source' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'name_source', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Determination name source'),
+        'required' => FALSE,
+        'description' => $t('Select name source'),
+        'widget' => array('type' => 'options_select'),
+        'display' => array('settings' => array('weight' => 1)),
+      ),
+    ),
+    'name_source_tmp' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Temp name source'),
+        'required' => FALSE,
+        'description' => $t('Temporary field to hold old name source'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('default' => array('type' => 'hidden')),
+      ),
+    ),
+    'external_id' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('External name source id'),
+        'required' => FALSE,
+        'description' => $t('External id retrieved from name source'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 9)),
+      ),
+    ),
+    'citation' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text_long',
+        'settings' => array('rows' => 3),
+      ),
+      'instance' => array(
+        'label' => $t('Determination citation'),
+        'required' => FALSE,
+        'description' => $t('Citation for determination name'),
+        'widget' => array('type' => 'text_textarea'),
+        'display' => array('settings' => array('weight' => 19)),
+      ),
+    ),
+    'individual_name' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Determined by'),
+        'required' => FALSE,
+        'description' => $t('Individual who determined the name'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 9)),
+      ),
+    ),
+    'date_identified' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'datestamp',
+        'settings' => array(
+          'repeat' => 0,
+          'todate' => '',
+          'granularity' => array(
+            'year' => 'year',
+            'month' => 'month',
+            'day' => 'day',
+          ),
+          'tz_handling' => 'none',
+          'timezone_db' => '',
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Date identified'),
+        'required' => FALSE,
+        'description' => $t('Enter date identified'),
+        'widget' => array(
+          'type' => 'date_popup',
+          'settings' => array(
+            'input_format' => 'Y-m-d H:i:s',
+            'year_range' => '-100:+5',
+            'increment' => 1,
+          ),
+        ),
+        'display' => array(
+          'default' => array(
+            'type' => 'date_default',
+            'format_type' => 'short',
+            'settings' => array(
+              'format_type' => 'short',
+              'show_repeat_rule' => 'show',
+              'multiple_number' => '',
+              'multiple_from' => '',
+              'multiple_to'  => '',
+              'fromto' => 'both',
+              'weight' => 10,
+            ),
+          ),
+        ),
+        'settings' => array(
+          'default_value' => 'now',
+          'default_format' => 'short',
+          'default_value_code' => '',
+          'default_value2' => 'blank',
+          'default_value_code2' => '',
+          'user_register_form' => '',
+        ),
+      ),
+    ),
+    'determination_comment' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text_long',
+        'settings' => array('rows' => 3),
+      ),
+      'instance' => array(
+        'label' => $t('Determination notes'),
+        'required' => FALSE,
+        'description' => $t('Notes concerning determination'),
+        'widget' => array('type' => 'text_textarea'),
+        'display' => array('settings' => array('weight' => 10)),
+      ),
+    ),
+    'institution_code' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Institution code'),
+        'required' => FALSE,
+        'description' => $t('Code for institution owning the collection for which specimen belongs'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 11)),
+      ),
+    ),
+    'collection_code' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Collection code'),
+        'required' => FALSE,
+        'description' => $t('Unique identifier representing collection within institution'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 12)),
+      ),
+    ),
+    'catalog_number' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Catalog number'),
+        'required' => FALSE,
+        'description' => $t('Unique identifier representing specimen within collection'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 13)),
+      ),
+    ),
+    'previous_catalog_number' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Previous catalog number'),
+        'required' => FALSE,
+        'description' => $t('Previous identifier if specimen identified in earlier collection/institution'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 14)),
+      ),
+    ),
+    'related_catalog_item' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Related catalog number'),
+        'required' => FALSE,
+        'description' => $t('Qualified identifier of any related specimen'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 15)),
+      ),
+    ),
+    'relationship_type' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Relationship type'),
+        'required' => FALSE,
+        'description' => $t('Relation of specmien to related cataloged specimen'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 16)),
+      ),
+    ),
+    'collection_number' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Collection number'),
+        'required' => FALSE,
+        'description' => $t('Identifier of specimen at time of collection'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 17)),
+      ),
+    ),
+    'collector_name' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Collector name'),
+        'required' => FALSE,
+        'description' => $t('Name of person responsible for collecting specimen'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 18)),
+      ),
+    ),
+    'date_collected' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'datestamp',
+        'settings' => array(
+          'repeat' => 0,
+          'todate' => '',
+          'granularity' => array(
+            'year' => 'year',
+            'month' => 'month',
+            'day' => 'day',
+          ),
+          'tz_handling' => 'none',
+          'timezone_db' => '',
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Date collected'),
+        'required' => FALSE,
+        'description' => $t('Enter date collected'),
+        'widget' => array(
+          'type' => 'date_popup',
+          'settings' => array(
+            'input_format' => 'Y-m-d H:i:s',
+            'year_range' => '-100:+5',
+            'increment' => 1,
+          ),
+        ),
+        'display' => array(
+          'default' => array(
+            'type' => 'date_default',
+            'format_type' => 'short',
+            'settings' => array(
+              'format_type' => 'short',
+              'show_repeat_rule' => 'show',
+              'multiple_number' => '',
+              'multiple_from' => '',
+              'multiple_to'  => '',
+              'fromto' => 'both',
+              'weight' => 19,
+            ),
+          ),
+        ),
+        'settings' => array(
+          'default_value' => 'now',
+          'default_format' => 'short',
+          'default_value_code' => '',
+          'default_value2' => 'blank',
+          'default_value_code2' => '',
+          'user_register_form' => '',
+        ),
+      ),
+    ),
+    'notes' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text_long',
+        'settings' => array('rows' => 3),
+      ),
+      'instance' => array(
+        'label' => $t('Notes'),
+        'required' => FALSE,
+        'description' => $t('Notes'),
+        'widget' => array('type' => 'text_textarea'),
+        'display' => array('settings' => array('weight' => 20)),
+      ),
+    ),
+    'earliest_date_collected' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'datestamp',
+        'settings' => array(
+          'repeat' => 0,
+          'todate' => '',
+          'granularity' => array(
+            'year' => 'year',
+            'month' => 'month',
+            'day' => 'day',
+          ),
+          'tz_handling' => 'none',
+          'timezone_db' => '',
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Earliest date collected'),
+        'required' => FALSE,
+        'description' => $t('Enter earliest date collected'),
+        'widget' => array(
+          'type' => 'date_popup',
+          'settings' => array(
+            'input_format' => 'Y-m-d H:i:s',
+            'year_range' => '-100:+5',
+            'increment' => 1,
+          ),
+        ),
+        'display' => array(
+          'default' => array(
+            'type' => 'date_default',
+            'format_type' => 'short',
+            'settings' => array(
+              'format_type' => 'short',
+              'show_repeat_rule' => 'show',
+              'multiple_number' => '',
+              'multiple_from' => '',
+              'multiple_to'  => '',
+              'fromto' => 'both',
+              'weight' => 21,
+            ),
+          ),
+        ),
+        'settings' => array(
+          'default_value' => 'now',
+          'default_format' => 'short',
+          'default_value_code' => '',
+          'default_value2' => 'blank',
+          'default_value_code2' => '',
+          'user_register_form' => '',
+        ),
+      ),
+    ),
+    'latest_date_collected' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'datestamp',
+        'settings' => array(
+          'repeat' => 0,
+          'todate' => '',
+          'granularity' => array(
+            'year' => 'year',
+            'month' => 'month',
+            'day' => 'day',
+          ),
+          'tz_handling' => 'none',
+          'timezone_db' => '',
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Latest date collected'),
+        'required' => FALSE,
+        'description' => $t('Enter latest date collected'),
+        'widget' => array(
+          'type' => 'date_popup',
+          'settings' => array(
+            'input_format' => 'Y-m-d H:i:s',
+            'year_range' => '-100:+5',
+            'increment' => 1,
+          ),
+        ),
+        'display' => array(
+          'default' => array(
+            'type' => 'date_default',
+            'format_type' => 'short',
+            'settings' => array(
+              'format_type' => 'short',
+              'show_repeat_rule' => 'show',
+              'multiple_number' => '',
+              'multiple_from' => '',
+              'multiple_to'  => '',
+              'fromto' => 'both',
+              'weight' => 22,
+            ),
+          ),
+        ),
+        'settings' => array(
+          'default_value' => 'now',
+          'default_format' => 'short',
+          'default_value_code' => '',
+          'default_value2' => 'blank',
+          'default_value_code2' => '',
+          'user_register_form' => '',
+        ),
+      ),
+    ),
+    'taxon_author_id' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Taxon author id'),
+        'required' => FALSE,
+        'widget' => array('type' => 'number'),
+        'display' => array('default' => array('type' => 'hidden')),
+      ),
+    ),
+    'publication_id' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Publication id'),
+        'required' => FALSE,
+        'widget' => array('type' => 'number'),
+        'display' => array('default' => array('type' => 'hidden')),
+      ),
+    ),
+    'taxon_hierarchy' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text_long',
+        'settings' => array('rows' => 3),
+      ),
+      'instance' => array(
+        'label' => $t('Taxon hierarchy'),
+        'required' => FALSE,
+        'description' => $t('Serialized array of taxon hierarchy retrieved from name source'),
+        'widget' => array('type' => 'text_textarea'),
+        'display' => array('settings' => array('weight' => 23)),
+      ),
+    ),
+    'locality_title' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => 'Locality Template Title',
+        'required' => FALSE,
+        'description' => 'Title of original locality',
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 1)),
+      ),
+    ),
+    'continent_ocean' => array(
+      'field' => array(
+        'type' => 'taxonomy_term_reference',
+        'cardinality' => 1,
+        'settings' => array(
+          'allowed_values' => array(
+            array('vocabulary' => 'continent_ocean', 'parent' => 0),
+          ),
+        ),
+      ),
+      'instance' => array(
+        'label' => $t('Continent/Ocean of locality'),
+        'required' => FALSE,
+        'description' => $t('Enter continent or ocean for locality'),
+        'widget' => array('type' => 'taxonomy_autocomplete'),
+        'display' => array('settings' => array('weight' => 25)),
+      ),
+    ),
+    'admin1' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('State name'),
+        'required' => FALSE,
+        'description' => $t('Enter administrator level 1 (state/province)'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 27)),
+      ),
+    ),
+    'admin2' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('County name'),
+        'required' => FALSE,
+        'description' => $t('Enter administrator level 2 (county)'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 28)),
+      ),
+    ),
+    'coordinate_precision' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Precision of locality lat/long'),
+        'required' => FALSE,
+        'description' => $t('Enter precision of locality lat/long'),
+        'widget' => array('type' => 'number'),
+        'display' => array('settings' => array('weight' => 31)),
+      ),
+    ),
+    'min_elevation' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Minimum elevation of locality'),
+        'required' => FALSE,
+        'description' => $t('Enter minimum elevation of locality'),
+        'widget' => array('type' => 'number'),
+        'display' => array('settings' => array('weight' => 32)),
+      ),
+    ),
+    'max_elevation' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Maximum elevation of locality'),
+        'required' => FALSE,
+        'description' => $t('Enter maximum elevation of locality'),
+        'widget' => array('type' => 'number'),
+        'display' => array('settings' => array('weight' => 33)),
+      ),
+    ),
+    'min_depth' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Minimum depth of locality'),
+        'required' => FALSE,
+        'description' => $t('Enter minimum depth of locality'),
+        'widget' => array('type' => 'number'),
+        'display' => array('settings' => array('weight' => 34)),
+      ),
+    ),
+    'max_depth' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Maximum depth of locality'),
+        'required' => FALSE,
+        'description' => $t('Enter minimum depth of locality'),
+        'widget' => array('type' => 'number'),
+        'display' => array('settings' => array('weight' => 35)),
+      ),
+    ),
+    'furi' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Foreign object URI'),
+        'cardinality' => 1,
+        'type' => 'text_textfield',
+        'display' => array('default' => array('type' => 'hidden', 'weight' => 36)),
+      ),
+    ),
+    'image_count' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'number_integer',
+      ),
+      'instance' => array(
+        'label' => $t('Image count'),
+        'cardinality' => 1,
+        'type' => 'number',
+        'widget' => array('type' => 'number'),
+        'display' => array('default' => array('type' => 'hidden', 'weight' => 39)),
+      ),
+    ),
+  );
+}
+
+/**
+ * Create entity reference fields.
+ */
+function _bir_specimen_create_entity_references() {
+  $t = get_t();
+
+  $entityreference_fields = array(
+    array(
+      'field_name' => 'contributor',
+      'label' => $t('Contributor'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'users' => array(
+          'table' => 'users',
+          'columns' => array(
+            'target_id' => 'uid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array(),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'user',
+      ),
+      'translatable' => 0,
+    ),
+    array(
+      'field_name' => 'locality_id',
+      'label' => $t('Locality Id'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'node' => array(
+          'table' => 'node',
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array(
+            'bir_locality' => 'bir_locality',
+          ),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+      'translatable' => 0,
+    ),
+    array(
+      'field_name' => 'standard_image',
+      'label' => $t('Standard Image'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'node' => array(
+          'table' => 'node',
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array('bir_image' => 'bir_image'),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+      'translatable' => 0,
+    ),
+  );
+
+  foreach ($entityreference_fields as $field) {
+    if (!field_info_field($field['field_name'])) {
+      field_create_field($field);
+    }
+  }
+
+  $entityreference_instances = array(
+    array(
+      'field_name' => 'contributor',
+      'entity_type' => 'node',
+      'bundle' => 'bir_specimen',
+      'label' => 'Contributor',
+      'cardinality' => 1,
+      'description' => $t('Select Contributor'),
+      'widget' => array(
+        'type' => 'options_select',
+        'module' => 'options',
+      ),
+      'settings' => array(
+        'target_type' => 'user',
+        'handler_settings' => array('target_bundles' => array()),
+      ),
+    ),
+    array(
+      'field_name' => 'locality_id',
+      'entity_type' => 'node',
+      'bundle' => 'bir_specimen',
+      'label' => 'Locality Id',
+      'cardinality' => 1,
+      'description' => $t('Locality associated with specimen.'),
+      'widget' => array(
+        'type' => 'entityreference_autocomplete',
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array(
+            'bir_specimen' => 'bir_specimen',
+          ),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+    ),
+    array(
+      'field_name' => 'standard_image',
+      'entity_type' => 'node',
+      'bundle' => 'bir_specimen',
+      'label' => 'Standard Image',
+      'cardinality' => 1,
+      'description' => $t('Standard Image associated with object.'),
+      'widget' => array(
+        'type' => 'entityreference_autocomplete',
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array('bir_image' => 'bir_image'),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+    ),
+  );
+
+  foreach ($entityreference_instances as $instance) {
+    if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+      field_create_instance($instance);
+    }
+  }
+
+  return;
+}

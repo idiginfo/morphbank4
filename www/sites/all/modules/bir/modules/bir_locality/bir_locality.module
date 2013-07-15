@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * @file
+ * Functions related to BIR Locality.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function bir_locality_menu() {
+  $items = array();
+  $items['bir_locality/ajax/autofill-locality'] = array(
+    'page callback' => 'bir_locality_autofill_fields',
+    'access arguments' => array('create bir_locality content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Ajax function for autofill on locality.
+ */
+function bir_locality_autofill_fields() {
+  $value = $_POST['val'];
+  $matches = array();
+  preg_match("/\(([0-9^\)]*)\).*/", $value, $matches);
+  if (empty($matches[1])) {
+    exit;
+  }
+
+  $node = node_load((int) $matches[1]);
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $geolocation = $wrapper->geolocation->value();
+
+  $json_array = array(
+    'edit-locality-title' => $node->title,
+    'edit-continent-ocean' => $wrapper->continent_ocean->value()->name,
+    'getlocations_country' => $geolocation['country'],
+    'getlocations_province' => $geolocation['province'],
+    'getlocations_latitude' => $geolocation['latitude'],
+    'getlocations_longitude' => $geolocation['longitude'],
+    'edit-coordinate-precision' => $wrapper->coordinate_precision->value(),
+    'edit-min-elevation' => $wrapper->min_elevation->value(),
+    'edit-max-elevation' => $wrapper->max_elevation->value(),
+    'edit-min-depth' => $wrapper->min_depth->value(),
+    'edit-max-depth' => $wrapper->max_depth->value(),
+  );
+
+  $geo = array(
+    'getlocations_country',
+    'getlocations_province',
+    'getlocations_latitude',
+    'getlocations_longitude',
+  );
+
+  // Sets up trigger to submit geolocation form via javascript.
+  $json_array['trigger'] = FALSE;
+  foreach ($geo as $key) {
+    if (!empty($json_array[$key])) {
+      $json_array['trigger'] = TRUE;
+    }
+  }
+
+  print json_encode($json_array);
+}

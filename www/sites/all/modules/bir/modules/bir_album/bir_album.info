@@ -1,0 +1,14 @@
+; $Id$
+name = BIR Album
+description = Provides functionality and creation of Biodiversity Image Repository Albums.
+package = Biodiversity Image Repository
+core = 7.x
+version = 7.x-1.1-dev
+
+dependencies[] = bir_locality
+dependencies[] = bir_specimen
+dependencies[] = bir_image
+dependencies[] = bir_view
+
+files[] = bir_album.module
+files[] = bir_album.install

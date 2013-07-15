@@ -1,0 +1,322 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall functions for the album module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bir_album_install() {
+  _bir_album_create_node_type();
+  db_query("UPDATE {system} SET weight = 1 WHERE type = 'module' AND name = 'bir_album'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_album_uninstall() {
+  _bir_album_delete_node_type();
+}
+
+/**
+ * Create the album node type.
+ */
+function _bir_album_create_node_type() {
+  // Variables to set defaults on forms.
+  variable_set('additional_settings__active_tab_bir_album', 'edit-menu');
+  variable_set('comment_bir_album', '1');
+  variable_set('menu_options_bir_album', array('navigation'));
+  variable_set('menu_parent_bir_album', 'navigation:6');
+  variable_set('node_options_bir_album', array('status'));
+  variable_set('node_preview_bir_album', 0);
+  variable_set('node_submitted_bir_album', 0);
+
+  $t = get_t();
+  $node = array(
+    'type' => 'bir_album',
+    'name' => $t('BIR Album'),
+    'base' => 'node_content',
+    'description' => $t('An <em>album</em> is a related group of BIR nodes.'),
+  );
+  $content_type = node_type_set_defaults($node);
+  node_type_save($content_type);
+
+  // Create OG fields.
+  og_create_field(OG_AUDIENCE_FIELD, 'node', 'bir_album');
+  og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'bir_album');
+
+  // Create entity reference fields.
+  _bir_album_create_entity_references();
+
+  // Create Field Album fields.
+  _bir_album_create_fields();
+}
+
+/**
+ * Remove bir album node type.
+ */
+function _bir_album_delete_node_type() {
+  // Temporarily enable the node type.
+  // See issue https://drupal.org/node/943588#comment-4754844.
+  db_update('node_type')
+    ->fields(array(
+      'disabled' => 0,
+    ))
+    ->condition('type', 'bir_album', '=')
+    ->condition('disabled', 1, '=')
+    ->execute();
+
+  // Clear the node type cache.
+  node_type_cache_reset();
+
+  db_delete('variable')->condition('name', '%_bir_album', 'LIKE')->execute();
+  cache_clear_all('variables', 'cache_bootstrap');
+
+  // Remove all variables defined during install.
+  variable_del('additional_settings__active_tab_bir_album');
+  variable_del('comment_anonymous_bir_album');
+  variable_del('comment_bir_album');
+  variable_del('comment_default_mode_bir_album');
+  variable_del('comment_default_per_page_bir_album');
+  variable_del('comment_preview_bir_album');
+  variable_del('comment_subject_field_bir_album');
+  variable_del('field_bundle_settings_node__bir_album');
+  variable_del('menu_options_bir_album');
+  variable_del('menu_parent_bir_album');
+  variable_del('node_options_bir_album');
+  variable_del('node_preview_bir_album');
+  variable_del('node_submitted_bir_album');
+  variable_del('pathauto_node_bir_album_pattern');
+  variable_del('target_bundles_bir_album');
+
+  // Gather all the content created.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'bir_album'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once.
+  node_delete_multiple($nids);
+
+  // Loop over any remaining node field instances attached to the node.
+  $instances = field_info_instances('node', 'bir_album');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete content type.
+  node_type_delete('bir_album');
+
+  // Purge all field infromation.
+  field_purge_batch(1000);
+}
+
+/**
+ * Create bir album fields.
+ */
+function _bir_album_create_fields() {
+  $fields_array = _bir_album_fields();
+
+  // Loop through fields array and create field and instance.
+  foreach ($fields_array as $field) {
+    if (!field_info_field($field['field']['field_name'])) {
+      field_create_field($field['field']);
+    }
+    if (!field_info_instance($field['instance']['entity_type'], $field['instance']['field_name'], $field['instance']['bundle'])) {
+      field_create_instance($field['instance']);
+    }
+  }
+}
+
+/**
+ * Fields used in bir album.
+ */
+function _bir_album_fields() {
+  $t = get_t();
+
+  $fields_array = array(
+    array(
+      'field' => array(
+        'field_name' => 'furi',
+        'type' => 'text',
+        'cardinality' => 1,
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'field_name' => 'furi',
+        'entity_type' => 'node',
+        'bundle' => 'bir_album',
+        'label' => $t('Foreign object URI'),
+        'cardinality' => 1,
+        'type' => 'text_textfield',
+        'display' => array('default' => array('type' => 'hidden', 'weight' => 19)),
+      ),
+    ),
+    array(
+      'field' => array(
+        'field_name' => 'image_count',
+        'type' => 'number_integer',
+        'cardinality' => 1,
+      ),
+      'instance' => array(
+        'field_name' => 'image_count',
+        'entity_type' => 'node',
+        'bundle' => 'bir_album',
+        'label' => $t('Image count'),
+        'cardinality' => 1,
+        'type' => 'number',
+        'widget' => array('type' => 'number'),
+        'display' => array('default' => array('type' => 'hidden', 'weight' => 22)),
+      ),
+    ),
+  );
+
+  return $fields_array;
+}
+
+/**
+ * Create entity reference fields.
+ */
+function _bir_album_create_entity_references() {
+  $t = get_t();
+
+  $entityreference_fields = array(
+    array(
+      'field_name' => 'bir_album_node',
+      'label' => $t('BIR Record'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'node' => array(
+          'table' => 'node',
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array(
+            'bir_specimen' => 'bir_specimen',
+            'bir_image' => 'bir_image',
+            'bir_locality' => 'bir_locality',
+            'bir_view' => 'bir_view',
+          ),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+      'translatable' => 0,
+    ),
+    array(
+      'field_name' => 'standard_image',
+      'label' => $t('Standard Image'),
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'entity_types' => array(),
+      'foreign keys' => array(
+        'node' => array(
+          'table' => 'node',
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array(
+          '0' => 'target_id',
+        ),
+        'target_id' => array(
+          '0' => 'target_id',
+        ),
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array('bir_image' => 'bir_image'),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+      'translatable' => 0,
+    ),
+  );
+
+  foreach ($entityreference_fields as $field) {
+    if (!field_info_field($field['field_name'])) {
+      field_create_field($field);
+    }
+  }
+
+  $entityreference_instances = array(
+    array(
+      'field_name' => 'bir_album_node',
+      'entity_type' => 'node',
+      'bundle' => 'bir_album',
+      'label' => 'BIR Record',
+      'cardinality' => -1,
+      'description' => '',
+      'widget' => array(
+        'type' => 'entityreference_autocomplete',
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array(
+            'bir_specimen' => 'bir_specimen',
+            'bir_image' => 'bir_image',
+            'bir_locality' => 'bir_locality',
+            'bir_view' => 'bir_view',
+          ),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+    ),
+    array(
+      'field_name' => 'standard_image',
+      'entity_type' => 'node',
+      'bundle' => 'bir_album',
+      'label' => 'Standard Image',
+      'cardinality' => 1,
+      'description' => $t('Standard Image associated with object.'),
+      'widget' => array(
+        'type' => 'entityreference_autocomplete',
+      ),
+      'settings' => array(
+        'handler_settings' => array(
+          'target_bundles' => array('bir_image' => 'bir_image'),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+    ),
+  );
+
+  foreach ($entityreference_instances as $instance) {
+    if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+      field_create_instance($instance);
+    }
+  }
+
+  return;
+}
+
+/**
+ * Update function for weight.
+ */
+function bir_album_update_7101(&$sandbox) {
+  db_query("UPDATE {system} SET weight = 1 WHERE type = 'module' AND name = 'bir_album'");
+  return t('Bir Album module weight updated.');
+}

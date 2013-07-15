@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Functions related to BIR View.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function bir_view_menu() {
+  $items = array();
+  $items['bir_view/ajax/autofill-view'] = array(
+    'page callback' => 'bir_view_autofill_fields',
+    'access arguments' => array('create bir_view content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Ajax load function for view fiels autocomplete.
+ */
+function bir_view_autofill_fields() {
+  $value = $_POST['val'];
+  $matches = array();
+  preg_match("/\(([0-9^\)]*)\).*/", $value, $matches);
+  if (empty($matches[1])) {
+    exit;
+  }
+
+  $node = node_load((int) $matches[1]);
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+
+  $json_array = array(
+    'view_title' => $node->title,
+    'imaging_technique' => $wrapper->imaging_technique->raw(),
+    'imaging_preparation_technique' => $wrapper->imaging_preparation_technique->raw(),
+    'specimen_part' => $wrapper->specimen_part->raw(),
+    'view_angle' => $wrapper->view_angle->raw(),
+    'developmental_stage' => $wrapper->developmental_stage->raw(),
+    'sex' => $wrapper->sex->raw(),
+    'form' => $wrapper->form->raw(),
+  );
+
+  print json_encode($json_array);
+}

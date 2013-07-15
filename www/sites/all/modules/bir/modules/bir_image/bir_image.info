@@ -1,0 +1,13 @@
+; $Id$
+name = BIR Image
+description = Provides functionality and creation of Biodiversity Image Repository Image.
+package = Biodiversity Image Repository
+core = 7.x
+version = 7.x-1.3-dev
+
+dependencies[] = bir
+dependencies[] = bir_taxonomy
+
+files[] = bir_image.module
+files[] = bir_image.install
+files[] = includes/services_image_formatter.inc

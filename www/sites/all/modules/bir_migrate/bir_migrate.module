@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * @file
+ * Common functions used when using migration.
+ */
+
+/**
+ * Removes empty values prior to migrating.
+ * @see http://drupal.org/node/1665332
+ * @see http://drupal.org/node/1792894
+ */
+function bir_migrate_remove_empties($destination, $entity) {
+  if ($destination instanceof MigrateDestinationEntity) {
+    $entity_type = $destination->getEntityType();
+    $form = $form_state = array();
+    _field_invoke_default('submit', $entity_type, $entity, $form, $form_state);
+  }
+}
+
+/**
+ * Fix dates from MySql format to Drupal
+ */
+function bir_migrate_fix_date($row, $fields) {
+  foreach ($fields as $field) {
+    $time = strtotime($row->{$field});
+    $row->{$field} = $time;
+  }
+}
+
+/**
+ * Split source field into image height and width. Default 0.
+ */
+function bir_migrate_split_image_height_width($entity, $row) {
+  $parts = explode(" ", $row->bestQualityExtent);
+  $height = isset($parts[0]) && is_numeric($parts[0]) ? $parts[0] : 0;
+  $width = isset($parts[2]) && is_numeric($parts[2]) ? $parts[2] : 0;
+  $entity->image_height[LANGUAGE_NONE][0]['value'] = $height;
+  $entity->image_width[LANGUAGE_NONE][0]['value'] = $width;
+}
+
+/**
+ * Add geolocation field
+ */
+function bir_migrate_geolocation($entity, $row) {
+  $entity->geolocation[LANGUAGE_NONE][0] = array(
+    'name' => $row->locality,
+    'street' => '',
+    'additional' => '',
+    'city' => '',
+    'province' => $row->stateProvince,
+    'postal_code' => '',
+    'country' => $row->country,
+    'address' => '',
+    'latitude' => $row->verbatimLatitude,
+    'longitude' => $row->verbatimLongitude,
+    'marker' => '',
+  );
+}
+
+/**
+ * Index any newly migrated items
+ */
+function bir_search_api_update_index() {
+  // Load Search API Index.
+  $search_api_index = search_api_index_load('browse');
+  // Clear the index.
+  //$search_api_index->clear();
+  // Run!
+  search_api_index_items($search_api_index, -1);
+}

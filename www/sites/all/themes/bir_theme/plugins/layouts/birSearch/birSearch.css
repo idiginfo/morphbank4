@@ -1,0 +1,41 @@
+
+.panel-birSearch { 
+/*  overflow: hidden;  */
+}
+
+.panel-birSearch .panel-col-first { 
+  float: left; 
+  width: 20%; 
+  border:#999 solid 1px;
+}
+* html .panel-birSearch .panel-col-first {
+  width: 100%;
+
+}
+
+.panel-birSearch .panel-col-first .inside { 
+  margin: 0 .5em 1em 0;
+}
+
+.panel-birSearch .panel-col-last { 
+  float: left;
+  padding-left: 10px; 
+  width: 78%; 
+  border:#999 solid 1px;
+}
+* html .panel-birSearch .panel-col-last {
+  width: 49.9%;
+}
+
+.panel-birSearch .panel-col-last .inside { 
+  margin: 0 0 1em .5em;
+}
+
+#panels-edit-display .panel-pane,
+#panels-edit-display .helperclass {
+  margin: .5em;
+}
+
+.panel-birSearch .panel-separator {
+  margin: 0 0 1em 0;
+}

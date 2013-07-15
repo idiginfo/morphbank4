@@ -1,0 +1,11 @@
+; $Id$
+name = BIR Taxonomy
+description = Provides taxonomy vocabularies and terms used by Biodiversity Image Repository.
+package = Biodiversity Image Repository
+core = 7.x
+version = 7.x-1.0-dev
+
+dependencies[] = bir
+
+files[] = bir_taxonomy.module
+files[] = bir_taxonomy.install

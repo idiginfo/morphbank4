@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * Bir Album module.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function bir_album_menu() {
+  $items = array();
+  $items['bir_album/ajax/get-user-albums'] = array(
+    'page callback' => 'bir_album_get_user_albums',
+    'access arguments' => array('create bir_album content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Handle ajax call for ser albums on browse pages select.
+ */
+function bir_album_get_user_albums() {
+  global $user;
+
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('type', 'bir_album')
+    ->propertyCondition('uid', $user->uid)
+    ->execute();
+  $options = array();
+  if (!empty($result['node'])) {
+    $nodes = node_load_multiple(array_keys($result['node']));
+    foreach ($nodes as $node) {
+      $options[$node->nid] = ' - ' . $node->title;
+    }
+  }
+  print json_encode($options);
+}
+
+/**
+ * Handles the ajax calls for mass action select on browse pages.
+ */
+function bir_album_ajax() {
+  // Action for the post.
+  $action = $_POST['action'];
+  // Array of node ids.
+  $nids = isset($_POST['nids']) ? $_POST['nids'] : array();
+
+  switch ($action) {
+    case 'copy':
+      // Existing album nid.
+      $node = node_load($_POST['nid']);
+      $delta = max(array_keys($node->bir_album_node[LANGUAGE_NONE]));
+      foreach ($node->bir_album_node[LANGUAGE_NONE] as $array) {
+        $album_nids[] = $array['nid'];
+      }
+      // Remove duplicates.
+      $nids = array_diff($nids, $album_nids);
+      foreach ($nids as $nid) {
+        $delta++;
+        $node->bir_album_node[LANGUAGE_NONE][$delta]['target_id'] = $nid;
+        $node->bir_album_node[LANGUAGE_NONE][$delta]['target_type'] = "node";
+      }
+      node_save($node);
+      echo "Album updated.";
+      break;
+  }
+
+  return;
+}
+
+/**
+ * Implements hook_node_load().
+ *
+ * Adds url variables to edit node form when creating album.
+ */
+function bir_album_node_load($nodes, $types) {
+  if (!isset($_GET['bir_album_node'])) {
+    return;
+  }
+  if (!in_array('bir_album', $types)) {
+    return;
+  }
+
+  $items = explode(',', $_GET['bir_album_node']);
+
+  foreach ($nodes as $node) {
+    foreach ($items as $item) {
+      $node->bir_album_node[LANGUAGE_NONE][] = array('target_id' => $item);
+    }
+  }
+}

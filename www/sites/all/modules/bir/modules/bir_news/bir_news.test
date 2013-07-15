@@ -1,0 +1,49 @@
+<?php
+// $Id:$
+
+/**
+ * @file
+ * Simpletest case for bir_news module.
+ *
+ * Verify example module functionality.
+ */
+
+/**
+ * Functionality tests for node example module.
+ */
+class NodeExampleTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'BIR News',
+      'description' => 'Verify the BIR News node type creation.',
+      'group' => 'Biodiversity Image Repository',
+    );
+  }
+
+  function setUp() {
+    // Enable the module.
+    parent::setUp('bir_news');
+  }
+
+  /**
+   * Verify the functionality of the example module.
+   */
+  function testNodeCreation() {
+    // Create and login user.
+    $account = $this->drupalCreateUser(array('access content', 'create bir_news content'));
+    $this->drupalLogin($account);
+
+    // Create a new node. The image makes it more complicated, so skip it.
+    $edit = array(
+      'title' => $this->randomName(),
+    );
+    $this->drupalPost('node/add/bir-news', $edit, t('Save'));
+    $this->assertText("BIR News " . $edit['title'] . " has been created", "Found node creation message");
+
+    // Look on the examples page to make sure it shows up there also.
+    $this->drupalGet('bir_news');
+    $this->assertText($edit['title'], "Found random title string");
+  }
+}
+

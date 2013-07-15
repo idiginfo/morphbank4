@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ * BIR Specimen module
+ */
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function bir_specimen_form_bir_specimen_node_form_alter(&$form, &$form_state, $form_id) {
+  $key_array = array('#rows' => 1, '#cols' => 10, '#resizable' => FALSE);
+  foreach ($key_array as $key => $value) {
+    $form['citation'][LANGUAGE_NONE][0]['value'][$key] = $value;
+    $form['determination_comment'][LANGUAGE_NONE][0]['value'][$key] = $value;
+    $form['notes'][LANGUAGE_NONE][0]['value'][$key] = $value;
+  }
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function bir_specimen_views_data_alter(&$data) {
+  // Expose field handler for serialized taxon hierarchy.
+  $data['field_data_taxon_hierarchy']['taxon_hierarchy']['field']['handler'] = 'views_handler_field_serialized';
+}

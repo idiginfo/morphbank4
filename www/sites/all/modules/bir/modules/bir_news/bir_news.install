@@ -1,0 +1,139 @@
+<?php
+
+/**
+ * @file
+ * Install file for BIR News module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bir_news_install() {
+  $t = get_t();
+
+  // Define the node type.
+  $bir_news = array(
+    'type' => 'bir_news',
+    'name' => $t('BIR News'),
+    'base' => 'node_content',
+    'description' => $t('Biological Image Repository news.'),
+    'body_label' => $t('Text'),
+  );
+
+  // Complete the node type definition by setting any
+  // defaults not explicitly declared above.
+  $content_type = node_type_set_defaults($bir_news);
+  node_add_body_field($content_type);
+
+  // Save the content type.
+  node_type_save($content_type);
+
+  // Load the instance definition for our content type's body.
+  $body_instance = field_info_instance('node', 'body', 'bir_news');
+
+  // Add our bir_news_list view mode to the body instance display by
+  // instructing the body to display as a summary.
+  $body_instance['display']['bir_news_list'] = array(
+    'label' => 'hidden',
+    'type' => 'text_summary_or_trimmed',
+  );
+
+  // Save our changes to the body field instance.
+  field_update_instance($body_instance);
+
+  // Create all the fields we are adding to our content type.
+  foreach (_bir_news_installed_fields() as $field) {
+    field_create_field($field);
+  }
+
+  // Create all the instances for our fields.
+  foreach (_bir_news_installed_instances() as $instance) {
+    $instance['entity_type'] = 'node';
+    $instance['bundle'] = $bir_news['type'];
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Return a structured array defining the fields created by this content type.
+ *
+ * This is packaged in a function so it can be used in both
+ * bir_news_install() and bir_news_uninstall().
+ */
+function _bir_news_installed_fields() {
+  $t = get_t();
+  return array(
+    'bir_news_image' => array(
+      'field_name' => 'bir_news_image',
+      'type'       => 'image',
+      'cardinality' => 1,
+    ),
+  );
+}
+
+/**
+ * Return a structured array defining the instances for this content type.
+ *
+ * The instance lets Drupal know which widget to use to allow the user to enter
+ * data and how to react in different view modes.  We are going to display a
+ * page that uses a custom "bir_news_list" view mode.  We will set a
+ * cardinality of three allowing our content type to give the user three color
+ * fields.
+ *
+ * This is provided as a function so that it can be used in both hook_install()
+ * and hook_uninstall().
+ */
+function _bir_news_installed_instances() {
+  $t = get_t();
+  return array(
+    'bir_news_image' => array(
+      'field_name' => 'bir_news_image',
+      'label' => $t('Upload an image:'),
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'image_image',
+        'weight' => 2.10,
+      ),
+      'display' => array(
+        'bir_news_list' => array(
+          'label' => 'hidden',
+          'type' => 'image_link_content__thumbnail',
+        ),
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_news_uninstall() {
+  // Gather all the content created.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'bir_news'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once.
+  node_delete_multiple($nids);
+
+  // Loop over each of the fields and delete all instances.
+  foreach (array_keys(_bir_news_installed_fields()) as $field) {
+    field_delete_field($field);
+  }
+
+  // Loop over any remaining field instances attached to the bir_news.
+  $instances = field_info_instances('node', 'bir_news');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete content type.
+  node_type_delete('bir_news');
+
+  // Purge all field infromation.
+  field_purge_batch(1000);
+}

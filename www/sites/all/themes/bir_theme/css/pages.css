@@ -1,0 +1,428 @@
+/**
+ * @file
+ * Page Styling
+ *
+ * Style the markup found in page.tpl.php. Also includes some styling of
+ * miscellaneous Drupal elements that appear in the $content variable, such as
+ * ul.links, .pager, .more-link, etc.
+ */
+
+
+/*
+ * Body
+ */
+html{
+ 
+ }
+ 
+ 
+body {
+	
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:0.9em;
+	line-height:1.6em;
+	padding: 0px;
+	margin: 0px;
+}
+
+#page-wrapper {
+}
+
+#page {
+
+}
+
+/*
+ * The skip-link link will be completely hidden until a user tabs to the link.
+ * See the element-focusable rule in system.base.css.
+ */
+#skip-link a,
+#skip-link a:visited {
+  display: block;
+  width: 100%;
+  padding: 2px 0 3px 0;
+  text-align: center;
+  background-color: #666;
+  color: #fff;
+}
+
+/*
+ * Header
+ */
+#header {
+	/* border: 1px #090 solid; */
+}
+
+/* Div within the Header Div*/
+
+#header .section {
+	margin-left: 10%;
+}
+
+#logo /* Wrapping link for logo */ {
+  float: left; /* LTR */
+  margin: 0;
+  padding: 0;
+}
+
+#logo img {
+  vertical-align: bottom;
+}
+
+#name-and-slogan /* Wrapper for website name and slogan */ {
+  float: left;
+}
+
+h1#site-name,
+div#site-name /* The name of the website */ {
+  margin: 0;
+  font-size: 2em;
+  line-height: 1.5em;
+}
+
+#site-name a:link,
+#site-name a:visited {
+  color: #000;
+  text-decoration: none;
+}
+
+#site-name a:hover,
+#site-name a:focus {
+  text-decoration: underline;
+}
+
+#site-slogan /* The slogan (or tagline) of a website */ {
+}
+
+.region-header /* Wrapper for any blocks placed in the header region */ {
+  clear: both; /* Clear the logo */
+}
+
+/*
+ * Main (container for everything else)
+ */
+#main-wrapper {
+
+padding-left: 5%;
+padding-right: 5%;
+
+}
+
+#main {
+	
+	background-color:#fff;
+	border:1px solid #c4c4c4;
+	-moz-border-radius: 7px; /* FF1+ */
+	-webkit-border-radius: 7px; /* Saf3+, Chrome */
+	border-radius: 7px; /* Opera 10.5, IE 9 */
+	position:relative;
+	z-index:10;
+	
+}
+
+/*
+ * Content
+ */
+#content {
+	
+
+}
+
+#content .section{
+
+}
+
+
+.region-highlighted {
+	
+
+}
+
+.breadcrumb /* The path to the current page in the form of a list of links */ {
+  padding-bottom: 0; /* Undo system.css */
+}
+
+h1.title, /* The title of the page */
+h2.node-title, /* Title of a piece of content when it is given in a list of content */
+h2.block-title, /* Block title */
+h2.title, /* Comment section heading */
+h2.comment-form, /* Comment form heading */
+h3.title /* Comment title */ {
+  margin: 0;
+  font-size:12px;
+}
+
+tr.even /* Some tables have rows marked even or odd. */ {
+  /* background-color: #eee; */ /* Drupal core uses a #eee background */
+}
+
+tr.odd {
+  /* background-color: #eee; */ /* Drupal core uses a #eee background */
+}
+
+div.messages /* Important messages (status, warning, and error) for the user. See also the declarations in messages.css. */ {
+  margin: 1.5em 0; /* Drupal core uses "6px 0" margin */
+}
+
+div.messages ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+div.status /* Normal priority messages */ {
+}
+
+div.warning,
+tr.warning /* Medium priority messages */ {
+  /* border: 1px solid #f0c020; */ /* Drupal core uses: 1px solid #f0c020 */
+}
+
+div.error,
+tr.error /* High priority messages. See also the .error declaration below. */ {
+}
+
+.error /* Errors that are separate from div.messages status messages. */ {
+  /* color: #e55; */ /* Drupal core uses a #e55 background */
+}
+
+.warning /* Warnings that are separate from div.messages status messages. */ {
+  /* color: #e09010; */ /* Drupal core uses a #e09010 background */
+}
+
+div.tabs /* See also the tabs.css file. */ {
+}
+
+.region-help /* Help text on a page */ {
+}
+
+.more-help-link /* Link to more help */ {
+}
+
+.region-content /* Wrapper for the actual page content */ {
+}
+
+ul.links /* List of links */ {
+}
+
+ul.links.inline {
+  display: block; /* Let the links be inline, but the container be a block. */
+}
+
+ul.links li {
+  padding: 0 1em 0 0; /* LTR */
+}
+
+.item-list .pager /* A list of page numbers when more than 1 page of content is available */ {
+  padding: 0;
+}
+
+.item-list .pager li /* Each page number in the pager list */ {
+  padding: 0 0.5em;
+}
+
+.feed-icon /* The link to the RSS or Atom feed for the current list of content */ {
+}
+
+.more-link /* Aggregator, blog, and forum more link */ {
+}
+
+/*
+ * First sidebar (on left in LTR languages, on right in RTL)
+ *
+ * Remember to NOT add padding or margin to your .region-sidebar-first
+ * (see the layout.css file.)
+ */
+.region-sidebar-first {
+
+ 	background-color:#E4E4E4;
+ 	border:1px solid #DBDBDB;
+	-moz-border-radius: 7px; /* FF1+ */
+	-webkit-border-radius: 7px; /* Saf3+, Chrome */
+	border-radius: 7px; /* Opera 10.5, IE 9 */
+	
+}
+
+.region-sidebar-first .section {
+	
+
+}
+
+/*
+ * Second sidebar (on right in LTR languages, on left in RTL)
+ *
+ * Remember to NOT add padding or margin to your .region-sidebar-second
+ * (see the layout.css file.)
+ */
+.region-sidebar-second {
+
+	
+		
+}
+
+.region-sidebar-second .section {
+}
+
+/*
+ * Footer
+ */
+.region-footer {
+
+	
+}
+
+/*
+ * Page bottom
+ */
+.region-bottom /* Wrapper for any blocks placed in the page bottom region */ {
+	
+/*
+border:#C00 1px solid;
+ */
+}
+
+
+/*
+ * Footer
+ */
+#footer {
+	margin-left: 5%;
+	margin-right: 5%;
+	margin-top: -10px;
+	margin-bottom: 0px;
+
+	padding:10px 5px 5px 5px;
+	-moz-border-radius: 0 0 7px 7px; /* FF1+ */
+	-webkit-border-radius: 0 0 7px 7px; /* Saf3+, Chrome */
+	border-radius: 0 0 7px 7px; /* Opera 10.5, IE 9 */
+	background-color: #464646;
+	background-image: -moz-linear-gradient(top, #464646, #656565); /* FF3.6 */
+	background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #464646),color-stop(1, #656565)); /* Saf4+, Chrome */
+    filter:  progid:DXImageTransform.Microsoft.gradient(startColorStr='#464646', EndColorStr='#656565'); /* IE6,IE7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#464646', EndColorStr='#656565')";
+}
+
+#footer-nav {
+	width:100%;
+	height:2em;
+	overflow:hidden;	
+}
+
+#footer ul {
+	float:left;
+	margin:0!important;
+	padding: 0px;
+}
+
+#footer ul#menu-footer-legal{
+	float:right;	
+}
+
+
+#footer ul#menu-footer-legal li{
+	display: inline;
+	list-style-type: none;
+
+}
+#footer ul#menu-footer-site li{
+	display: inline;
+	list-style-type: none;
+
+}
+
+#footer li {
+	background:url(../images/footernav-bg.png) right center no-repeat;
+	padding-right:5px;
+	margin-right:3px;	
+}
+
+#footer li:last-child {
+	background-image:none;
+	padding-right:0;
+	margin-right:0;	
+}
+
+#footer a:link, #footer a:visited,#taxacrumb a:link, #taxacrumb a:visited {
+	color:#fff;
+	text-decoration:none;
+}
+
+#footer a:hover, #footer a:active,#taxacrumb a:hover, #taxacrumb a:active  {
+	color:#fff;
+	text-decoration:underline;
+}
+
+
+#footer .section {
+}
+
+#footer-message /* Wrapper for the footer message from Drupal's "Site information"
+                   and for any blocks placed in the footer region */ {
+}
+
+.region-footer {
+}
+
+/*
+ * Page bottom
+ */
+.region-bottom /* Wrapper for any blocks placed in the page bottom region */ {
+}
+
+
+
+
+/* ALA specific */
+
+span.asterisk-container {
+	background:url(../images/asterisk_20.png) right 0 no-repeat;
+	padding:5px 20px 0 0;
+}
+span.asterisk-container:hover {
+	background-position:right -81px;
+}
+
+
+
+
+#CCicon
+{
+	vertical-align:baseline;
+	padding-right: 10px;
+	color:#fff;
+}
+
+
+/* Added my mollman - testing Start Panel*/
+#startlhs p{
+	font-size:18px;
+	color:#847D00;
+	line-height:20px;
+}
+
+#startlhs {
+	margin-top:10px;
+    border:#CC9 solid 1px;
+	background-color:#FFC;	
+	padding: 10px 10px 10px 10px;
+	-moz-border-radius: 7px; /* FF1+ */
+	-webkit-border-radius: 7px; /* Saf3+, Chrome */
+	border-radius: 7px; /* Opera 10.5, IE 9 */
+}
+
+/* Added my mollman - single Image View*/
+
+.view {
+	/* border:#F00 solid 2px;*/
+
+}
+
+
+.tb1 tr:nth-of-type(odd) {
+  background-color:#E9E9E9;
+} 
+
+
+
+
+
+

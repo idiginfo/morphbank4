@@ -1,0 +1,148 @@
+<?php
+
+/**
+ * @file
+ * Installation file for BIR taxonomy.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function bir_taxonomy_install() {
+  $vocabulary_files = bir_taxonomy_get_vocabulary_files();
+  bir_taxonomy_vocabulary_terms($vocabulary_files);
+
+  // Loop through fields array and create field:instance
+  $field_info = _bir_taxonomy_fields_info();
+  foreach ($field_info as $key => $field_array) {
+    if (!field_info_field($key)) {
+      $field_info[$key]['field']['field_name'] = $key;
+      field_create_field($field_info[$key]['field']);
+    }
+
+    if (!field_info_instance('bir_taxonomy', $key, $field_info[$key]['instance']['bundle'])) {
+      $instance = $field_info[$key]['instance'];
+      $instance += array(
+        'field_name' => $key,
+        'entity_type' => 'taxonomy_term',
+      );
+      field_create_instance($instance);
+    }
+  }
+
+  // Insert default name source and uri.
+  $name_sources = array(
+    'Morphbank' => 'http://services.morphbank.net/mb3/',
+    'ALA-NSL' => 'http://biodiversity.org.au/taxon/',
+  );
+  if ($vocabulary = bir_taxonomy_get_vocabulary('name_source')) {
+    foreach ($name_sources as $name => $uri) {
+      $object = _bir_taxonomy_term_object($vocabulary->vid, $vocabulary->machine_name, $name, $uri);
+      if (!bir_taxonomy_get_term($vocabulary->vid, $object->name)) {
+        taxonomy_term_save($object);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_taxonomy_uninstall() {
+  return;
+  // Load all vocabulary used by module.
+  $vocabulary = bir_taxonomy_get_all_vocabulary();
+  if ($vocabulary) {
+    foreach ($vocabulary as $value) {
+      taxonomy_vocabulary_delete($value->vid);
+    }
+  }
+
+  // Remove attached name_service_uri field.
+  foreach (array_keys(_bir_taxonomy_fields_info()) as $field) {
+    field_delete_field($field);
+  }
+  $instances = field_info_instances('taxonomy_term', 'name_source');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+}
+
+/**
+ * Scans directory and retrieves name and file for vocabulary.
+ */
+function bir_taxonomy_get_vocabulary_files() {
+  $vocabulary_files = array();
+  $file_array = file_scan_directory(DRUPAL_ROOT . '/sites/all/modules/bir/modules/taxonomy/includes', '/.*\.inc$/');
+  foreach ($file_array as $object) {
+    $vocabulary_files[$object->name] = $object->filename;
+  }
+
+  return $vocabulary_files;
+}
+
+/**
+ * Creates the vocabulary and terms using .inc files.
+ */
+function bir_taxonomy_vocabulary_terms($vocabulary_files) {
+  foreach (array_keys($vocabulary_files) as $name) {
+    // Load file containing vocabulary and terms.
+    module_load_include('inc', 'bir_taxonomy', 'includes/' . $name);
+    $vocabulary_terms = call_user_func('bir_taxonomy_' . $name);
+
+    bir_taxonomy_vocabulary_terms_create($vocabulary_terms);
+    unset($vocabulary_terms);
+  }
+}
+
+
+/**
+ * Returns all vocabularies for bir_taxonomy.
+ */
+function bir_taxonomy_get_all_vocabulary() {
+  $vocabulary = taxonomy_vocabulary_load_multiple(NULL, array('module' => 'bir_taxonomy'));
+
+  return $vocabulary;
+}
+
+/**
+ * Set up attached field for name_service_uri.
+ */
+function _bir_taxonomy_fields_info() {
+  $t = get_t();
+  return array(
+    'name_source_uri' => array(
+      'field' => array(
+        'cardinality' => 1,
+        'type' => 'text',
+        'settings' => array('max_length' => 255),
+      ),
+      'instance' => array(
+        'label' => $t('Name Source URI'),
+        'entity_type' => 'taxonomy_term',
+        'bundle' => 'name_source',
+        'required' => TRUE,
+        'description' => $t('Enter URI for name source'),
+        'widget' => array('type' => 'text_textfield'),
+        'display' => array('settings' => array('weight' => 0)),
+      ),
+    ),
+  );
+}
+
+/**
+ * Create the term object.
+ */
+function _bir_taxonomy_term_object($vid, $vocabulary_machine_name, $name, $value) {
+  $object = (object) array(
+    'vid' => $vid,
+    'vocabulary_machine_name' => $vocabulary_machine_name,
+    'name' => $name,
+    'description' => '',
+    'format' => 'plain_text',
+    'parent' => array(0),
+    'name_source_uri' => array(LANGUAGE_NONE => array(0 => array('value' => $value))),
+  );
+
+  return $object;
+}

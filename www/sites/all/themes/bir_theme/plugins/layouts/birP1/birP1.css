@@ -1,0 +1,41 @@
+
+.panel-birP1 { 
+/*  overflow: hidden;  */
+}
+
+.panel-birP1 .panel-col-first { 
+  float: left; 
+  width: 20%; 
+  border:#999 solid 1px;
+}
+* html .panel-birP1 .panel-col-first {
+  width: 100%;
+
+}
+
+.panel-birP1 .panel-col-first .inside { 
+  margin: 0 .5em 1em 0;
+}
+
+.panel-birP1 .panel-col-last { 
+  float: left;
+  padding-left: 10px; 
+  width: 78%; 
+  border:#999 solid 1px;
+}
+* html .panel-birP1 .panel-col-last {
+  width: 49.9%;
+}
+
+.panel-birP1 .panel-col-last .inside { 
+  margin: 0 0 1em .5em;
+}
+
+#panels-edit-display .panel-pane,
+#panels-edit-display .helperclass {
+  margin: .5em;
+}
+
+.panel-birP1 .panel-separator {
+  margin: 0 0 1em 0;
+}

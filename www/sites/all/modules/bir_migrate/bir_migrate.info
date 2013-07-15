@@ -1,0 +1,15 @@
+name = "BIR Migrate"
+description = "Provides base module for migrating data from Morphbank 3"
+core = 7.x
+package = "Biological Image Repository Migrate"
+version = 7.x-1.0
+
+dependencies[] = date_migrate
+dependencies[] = getlocations
+dependencies[] = migrate_extras
+dependencies[] = og
+dependencies[] = profile2
+
+files[] = bir_migrate.module
+files[] = morphbank/morphbank_image.inc
+files[] = morphbank/morphbank_specimen.inc

@@ -1,0 +1,19 @@
+; $Id$
+name = BIR Locality
+description = Creates node type and functions for Biodiversity Image Repository Locality.
+package = Biodiversity Image Repository
+core = 7.x
+version = 7.x-1.0-dev
+
+dependencies[] = bir
+dependencies[] = bir_taxonomy
+
+; Base module files
+files[] = bir_locality.module
+files[] = bir_locality.install
+
+
+; Module includes
+
+; Tests
+files[] = tests/bir_locality.test
