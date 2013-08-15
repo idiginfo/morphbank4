@@ -175,7 +175,7 @@ function getlocations_menu() {
 
   // getlocations/info?lid     # ajax callback to fetch an address
   $items['getlocations/info'] = array(
-    'page callback' => 'getlocations_info',
+    'page callback' => 'getlocations_adinfo',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -793,6 +793,10 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
   $query['sensor'] = (getlocations_is_mobile() ? 'true' : 'false');
   $query['language'] = (isset($language->language) ? $language->language : 'und');
 
+  if ($defaults['region_bias']) {
+    $query['region'] = $defaults['region_bias'];
+  }
+
   $libraries = array();
   if ($defaults['panoramio_use']) {
     $libraries[] = 'panoramio';
@@ -866,6 +870,14 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
   }
 
   $getlocations_paths = getlocations_paths_get();
+
+  if ($defaults['geo_enable'] && !stristr($current_js, $getlocations_paths['getlocations_geo_path'])) {
+    $js_opts = array();
+    $js_opts['weight'] = $getlocations_js_weight;
+    $js_opts['type'] = 'file';
+    drupal_add_js($getlocations_paths['getlocations_geo_path'], $js_opts);
+    $getlocations_js_weight++;
+  }
 
   if ($defaults['markermanagertype'] == 1 && !stristr($current_js, $getlocations_paths['markermanager_path'])) {
     $js_opts = array();
@@ -949,6 +961,16 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
       $getlocations_js_weight++;
     }
   }
+  // search_places
+  if ($defaults['search_places']) {
+    if (!stristr($current_js, $getlocations_paths['getlocations_search_places_path'])) {
+      $js_opts = array();
+      $js_opts['weight'] = $getlocations_js_weight;
+      $js_opts['type'] = 'file';
+      drupal_add_js($getlocations_paths['getlocations_search_places_path'], $js_opts);
+      $getlocations_js_weight++;
+    }
+  }
 
   // categories
   if ($defaults['category_method'] && $defaults['category_showhide_buttons']) {
@@ -961,6 +983,18 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
     }
   }
 
+  // preview map
+  if ($defaults['extcontrol'] == 'preview_map') {
+    if (!stristr($current_js, $getlocations_paths['getlocations_preview_path'])) {
+      $js_opts = array();
+      $js_opts['weight'] = $getlocations_js_weight;
+      $js_opts['type'] = 'file';
+      drupal_add_js($getlocations_paths['getlocations_preview_path'], $js_opts);
+      $getlocations_js_weight++;
+    }
+  }
+
+
 }
 
 /**
@@ -971,129 +1005,129 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
  */
 function getlocations_defaults() {
   $defaults = array(
-    'api_version'               => 3,
-    'width'                     => '300px',
-    'height'                    => '200px',
-    'zoom'                      => 3,
-    'minzoom_map'               => -1,
-    'maxzoom_map'               => -1,
-    'controltype'               => 'small',
-    'pancontrol'                => 1,
-    'latlong'                   => '40,0',
-    'maptype'                   => 'Map',
-    'mtc'                       => 'standard',
+    'api_version'                   => 3,
+    'width'                         => '300px',
+    'height'                        => '200px',
+    'zoom'                          => 3,
+    'minzoom_map'                   => -1,
+    'maxzoom_map'                   => -1,
+    'controltype'                   => 'small',
+    'pancontrol'                    => 1,
+    'latlong'                       => '40,0',
+    'maptype'                       => 'Map',
+    'mtc'                           => 'standard',
     'baselayers' => array(
-      'Map'                     => 1,
-      'Satellite'               => 1,
-      'Hybrid'                  => 1,
-      'Physical'                => 1,
-      'OpenStreetMap'           => 0,
+      'Map'                         => 1,
+      'Satellite'                   => 1,
+      'Hybrid'                      => 1,
+      'Physical'                    => 1,
+      'OpenStreetMap'               => 0,
     ),
     'behavior' => array(
-      'scale'                   => 0,
-      'overview'                => 0,
-      'overview_opened'         => 0,
-      'scrollwheel'             => 0,
+      'scale'                       => 0,
+      'overview'                    => 0,
+      'overview_opened'             => 0,
+      'scrollwheel'                 => 0,
     ),
-    'streetview_show'           => 0,
-    'trafficinfo'               => 0,
-    'trafficinfo_state'         => 0,
-    'bicycleinfo'               => 0,
-    'bicycleinfo_state'         => 0,
-    'transitinfo'               => 0,
-    'transitinfo_state'         => 0,
-    'panoramio_use'             => 0,
-    'panoramio_show'            => 0,
-    'panoramio_state'           => 0,
-    'places'                    => 0,
-    'poi_show'                  => 1,
-    'transit_show'              => 1,
-    'node_map_marker'           => 'drupal',
-    'user_map_marker'           => 'drupal',
-    'vocabulary_map_marker'     => 'drupal',
-    'term_map_marker'           => 'drupal',
-    'comment_map_marker'        => 'drupal',
-    'input_map_marker'          => 'drupal',
-    'markeraction'              => 0,
-    'markeractiontype'          => 1,
-    'minzoom'                   => 6,
-    'maxzoom'                   => 16,
-    'nodezoom'                  => 12,
-    'markermanagertype'         => 0,
-    'usemarkermanager'          => 0,
-    'useclustermanager'         => 0,
-    'markerclusterer_style'     => -1,
-    'markerclusterer_zoom'      => -1,
-    'markerclusterer_size'      => -1,
-    'markerclusterer_minsize'   => -1,
-    'markerclusterer_title'     => t('Click here to see more'),
-    'pansetting'                => 2,
-    'draggable'                 => 1,
-    'styles'                    => '',
-    'returnlink_page_enable'    => 0,
-    'returnlink_page_link'      => t('Return to Page'),
-    'returnlink_user_enable'    => 0,
-    'returnlink_user_link'      => t('Return to User'),
-    'returnlink_term_enable'    => 0,
-    'returnlink_term_link'      => t('Return to Term'),
-    'returnlink_comment_enable' => 0,
-    'returnlink_comment_link'   => t('Return to Comment'),
-    'getlocations_js_weight'    => 0,
-    'custom_content_enable'     => 0,
-    'custom_content_source'     => '',
-    'use_jsapi'                 => 0,
-    'preload_data'              => 0,
-    'is_mobile'                 => (getlocations_is_mobile() ? 1 : 0),
-    'geometry'                  => 0,
-    'weather_use'               => 0,
-    'weather_show'              => 0,
-    'weather_state'             => 0,
-    'weather_temp'              => 1,
-    'weather_speed'             => 1,
-    'weather_label'             => 0,
-    'weather_cloud'             => 1,
-    'weather_cloud_state'       => 0,
-    'weather_clickable'         => 1,
-    'weather_info'              => 1,
-    'map_backgroundcolor'       => '',
-    'show_maplinks'             => 0,
-    'fullscreen'                => 0,
-    'show_bubble_on_one_marker' => 0,
-    'polygons_enable'           => 0,
-    'polygons_strokecolor'      => "#FF0000",
-    'polygons_strokeopacity'    => "0.8",
-    'polygons_strokeweight'     => "3",
-    'polygons_fillcolor'        => "#FF0000",
-    'polygons_fillopacity'      => "0.35",
-    'polygons_coords'           => "",
-    'polygons_clickable'        => 0,
-    'polygons_message'          => "",
-    'rectangles_enable'         => 0,
-    'rectangles_strokecolor'    => "#FF0000",
-    'rectangles_strokeopacity'  => "0.8",
-    'rectangles_strokeweight'   => "3",
-    'rectangles_fillcolor'      => "#FF0000",
-    'rectangles_fillopacity'    => "0.35",
-    'rectangles_coords'         => "",
-    'rectangles_clickable'      => 0,
-    'rectangles_message'        => "",
-    'circles_enable'            => 0,
-    'circles_strokecolor'       => "#FF0000",
-    'circles_strokeopacity'     => "0.8",
-    'circles_strokeweight'      => "3",
-    'circles_fillcolor'         => "#FF0000",
-    'circles_fillopacity'       => "0.35",
-    'circles_coords'            => "",
-    'circles_clickable'         => 0,
-    'circles_message'           => "",
-    'circles_radius'            => 0,
-    'polylines_enable'          => 0,
-    'polylines_strokecolor'     => "#FF0000",
-    'polylines_strokeopacity'   => "0.8",
-    'polylines_strokeweight'    => "3",
-    'polylines_coords'          => "",
-    'polylines_clickable'       => 0,
-    'polylines_message'         => "",
+    'streetview_show'               => 0,
+    'trafficinfo'                   => 0,
+    'trafficinfo_state'             => 0,
+    'bicycleinfo'                   => 0,
+    'bicycleinfo_state'             => 0,
+    'transitinfo'                   => 0,
+    'transitinfo_state'             => 0,
+    'panoramio_use'                 => 0,
+    'panoramio_show'                => 0,
+    'panoramio_state'               => 0,
+    'places'                        => 0,
+    'poi_show'                      => 1,
+    'transit_show'                  => 1,
+    'node_map_marker'               => 'drupal',
+    'user_map_marker'               => 'drupal',
+    'vocabulary_map_marker'         => 'drupal',
+    'term_map_marker'               => 'drupal',
+    'comment_map_marker'            => 'drupal',
+    'input_map_marker'              => 'drupal',
+    'markeraction'                  => 0,
+    'markeractiontype'              => 1,
+    'minzoom'                       => 6,
+    'maxzoom'                       => 16,
+    'nodezoom'                      => 12,
+    'markermanagertype'             => 0,
+    'usemarkermanager'              => 0,
+    'useclustermanager'             => 0,
+    'markerclusterer_style'         => -1,
+    'markerclusterer_zoom'          => -1,
+    'markerclusterer_size'          => -1,
+    'markerclusterer_minsize'       => -1,
+    'markerclusterer_title'         => t('Click here to see more'),
+    'pansetting'                    => 2,
+    'draggable'                     => 1,
+    'styles'                        => '',
+    'returnlink_page_enable'        => 0,
+    'returnlink_page_link'          => t('Return to Page'),
+    'returnlink_user_enable'        => 0,
+    'returnlink_user_link'          => t('Return to User'),
+    'returnlink_term_enable'        => 0,
+    'returnlink_term_link'          => t('Return to Term'),
+    'returnlink_comment_enable'     => 0,
+    'returnlink_comment_link'       => t('Return to Comment'),
+    'getlocations_js_weight'        => 0,
+    'custom_content_enable'         => 0,
+    'custom_content_source'         => '',
+    'use_jsapi'                     => 0,
+    'preload_data'                  => 0,
+    'is_mobile'                     => (getlocations_is_mobile() ? 1 : 0),
+    'geometry'                      => 0,
+    'weather_use'                   => 0,
+    'weather_show'                  => 0,
+    'weather_state'                 => 0,
+    'weather_temp'                  => 1,
+    'weather_speed'                 => 1,
+    'weather_label'                 => 0,
+    'weather_cloud'                 => 1,
+    'weather_cloud_state'           => 0,
+    'weather_clickable'             => 1,
+    'weather_info'                  => 1,
+    'map_backgroundcolor'           => '',
+    'show_maplinks'                 => 0,
+    'fullscreen'                    => 0,
+    'show_bubble_on_one_marker'     => 0,
+    'polygons_enable'               => 0,
+    'polygons_strokecolor'          => "#FF0000",
+    'polygons_strokeopacity'        => "0.8",
+    'polygons_strokeweight'         => "3",
+    'polygons_fillcolor'            => "#FF0000",
+    'polygons_fillopacity'          => "0.35",
+    'polygons_coords'               => "",
+    'polygons_clickable'            => 0,
+    'polygons_message'              => "",
+    'rectangles_enable'             => 0,
+    'rectangles_strokecolor'        => "#FF0000",
+    'rectangles_strokeopacity'      => "0.8",
+    'rectangles_strokeweight'       => "3",
+    'rectangles_fillcolor'          => "#FF0000",
+    'rectangles_fillopacity'        => "0.35",
+    'rectangles_coords'             => "",
+    'rectangles_clickable'          => 0,
+    'rectangles_message'            => "",
+    'circles_enable'                => 0,
+    'circles_strokecolor'           => "#FF0000",
+    'circles_strokeopacity'         => "0.8",
+    'circles_strokeweight'          => "3",
+    'circles_fillcolor'             => "#FF0000",
+    'circles_fillopacity'           => "0.35",
+    'circles_coords'                => "",
+    'circles_clickable'             => 0,
+    'circles_message'               => "",
+    'circles_radius'                => 0,
+    'polylines_enable'              => 0,
+    'polylines_strokecolor'         => "#FF0000",
+    'polylines_strokeopacity'       => "0.8",
+    'polylines_strokeweight'        => "3",
+    'polylines_coords'              => "",
+    'polylines_clickable'           => 0,
+    'polylines_message'             => "",
     'category_method'               => 0,
     'category_term_reference_field' => '',
     'category_showhide_buttons'     => 0,
@@ -1105,6 +1139,21 @@ function getlocations_defaults() {
     'kml_url_button'                => 0,
     'kml_url_button_label'          => 'Kml Layer',
     'kml_url_button_state'          => 0,
+    'visual_refresh'                => 0,
+    'map_resize'                    => 0,
+    'region_bias'                   => variable_get('site_default_country', ''),
+    'fullscreen_disable'            => 0,
+    'search_places'                 => 0,
+    'search_places_size'            => 40,
+    'search_places_position'        => 'outside_above',
+    'search_places_label'           => t('Google Places Search'),
+    'search_places_placeholder'     => '',
+    'search_places_dd'              => 0,
+    'search_places_list'            => 0,
+    'getdirections_enabled'         => (module_exists('getdirections') ? 1 : 0),
+    'jquery_colorpicker_enabled'    => (module_exists('jquery_colorpicker') ? 1 : 0),
+    'geo_enable'                    => 0,
+    'extcontrol'                    => '',
   );
 
   $getlocations_defaults = variable_get('getlocations_default', $defaults);
@@ -1378,7 +1427,7 @@ function getlocations_get_path_from_lid($lid) {
 }
 
 // ajax callback to fill infobubble
-function getlocations_info() {
+function getlocations_adinfo() {
 
   $lid = $_GET['lid'];
   $lidkey = $_GET['key'];
@@ -1448,7 +1497,7 @@ function getlocations_getinfo($lid, $lidkey, $extra=FALSE) {
       }
     }
 
-    $content = theme('getlocations_info', array('location' => $location));
+    $content = theme('getlocations_adinfo', array('location' => $location));
   }
   return $content;
 
@@ -2098,96 +2147,114 @@ function getlocations_get_nodetype($nid) {
  * @param array $minmaxes
  * @param string $mapid
  * @param bool $inputmap
- * @param bool $searchmap
+ * @param string $extcontrol
  *
  */
-function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $inputmap = FALSE, $searchmap = FALSE) {
-  global $language;
+function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $inputmap = FALSE, $extcontrol = '') {
+  global $language, $is_https;
   $lla = explode(',', $defaults['latlong']);
   $lat = $lla[0];
   $lng = $lla[1];
   $settings = array(
     $mapid => array(
-      'lat'                     => trim($lat),
-      'lng'                     => trim($lng),
-      'locale_prefix'           => $language->prefix,
-      'zoom'                    => $defaults['zoom'],
-      'minzoom_map'             => $defaults['minzoom_map'],
-      'maxzoom_map'             => $defaults['maxzoom_map'],
-      'maptype'                 => $defaults['maptype'],
-      'controltype'             => $defaults['controltype'],
-      'mtc'                     => $defaults['mtc'],
-      'baselayers'              => $defaults['baselayers'],
-      'scale'                   => $defaults['behavior']['scale'],
-      'overview'                => $defaults['behavior']['overview'],
-      'overview_opened'         => $defaults['behavior']['overview_opened'],
-      'scrollwheel'             => $defaults['behavior']['scrollwheel'],
-      'trafficinfo'             => $defaults['trafficinfo'],
-      'trafficinfo_state'       => $defaults['trafficinfo_state'],
-      'bicycleinfo'             => $defaults['bicycleinfo'],
-      'bicycleinfo_state'       => $defaults['bicycleinfo_state'],
-      'transitinfo'             => $defaults['transitinfo'],
-      'transitinfo_state'       => $defaults['transitinfo_state'],
-      'streetview_show'         => $defaults['streetview_show'],
-      'pancontrol'              => $defaults['pancontrol'],
-      'panoramio_use'           => $defaults['panoramio_use'],
-      'panoramio_show'          => $defaults['panoramio_show'],
-      'panoramio_state'         => $defaults['panoramio_state'],
-      'poi_show'                => $defaults['poi_show'],
-      'transit_show'            => $defaults['transit_show'],
-      'map_marker'              => $defaults['node_map_marker'],
-      'markeraction'            => $defaults['markeraction'],
-      'markeractiontype'        => $defaults['markeractiontype'],
-      'minzoom'                 => $defaults['minzoom'],
-      'maxzoom'                 => $defaults['maxzoom'],
-      'nodezoom'                => $defaults['nodezoom'],
-      'markermanagertype'       => $defaults['markermanagertype'],
-      'usemarkermanager'        => $defaults['usemarkermanager'],
-      'useclustermanager'       => $defaults['useclustermanager'],
-      'markerclusterer_style'   => $defaults['markerclusterer_style'],
-      'markerclusterer_zoom'    => $defaults['markerclusterer_zoom'],
-      'markerclusterer_size'    => $defaults['markerclusterer_size'],
-      'markerclusterer_minsize' => $defaults['markerclusterer_minsize'],
-      'markerclusterer_title'   => $defaults['markerclusterer_title'],
-      'pansetting'              => $defaults['pansetting'],
-      'draggable'               => $defaults['draggable'],
-      'styles'                  => $defaults['styles'],
-      'datanum'                 => count($latlons),
-      'latlons'                 => $latlons,
-      'minmaxes'                => (empty($minmaxes) ? '' : implode(',', $minmaxes)),
-      'inputmap'                => ($inputmap ? 1 : 0),
-      'searchmap'               => ($searchmap ? 1 : 0),
-      'custom_content_enable'   => $defaults['custom_content_enable'],
-      'preload_data'            => $defaults['preload_data'],
-      'is_mobile'               => (getlocations_is_mobile() ? 1 : 0),
-      'weather_use'             => $defaults['weather_use'],
-      'map_backgroundcolor'     => $defaults['map_backgroundcolor'],
-      'show_maplinks'           => $defaults['show_maplinks'],
-      'js_path'                 => base_path() . GETLOCATIONS_PATH . '/js/',
-      'info_path'               => url("getlocations/info"),
-      'lidinfo_path'            => url("getlocations/lidinfo"),
-      'fullscreen'              => $defaults['fullscreen'],
+      'lat'                       => trim($lat),
+      'lng'                       => trim($lng),
+      'locale_prefix'             => $language->prefix,
+      'zoom'                      => $defaults['zoom'],
+      'minzoom_map'               => $defaults['minzoom_map'],
+      'maxzoom_map'               => $defaults['maxzoom_map'],
+      'maptype'                   => $defaults['maptype'],
+      'controltype'               => $defaults['controltype'],
+      'mtc'                       => $defaults['mtc'],
+      'baselayers'                => $defaults['baselayers'],
+      'scale'                     => $defaults['behavior']['scale'],
+      'overview'                  => $defaults['behavior']['overview'],
+      'overview_opened'           => $defaults['behavior']['overview_opened'],
+      'scrollwheel'               => $defaults['behavior']['scrollwheel'],
+      'trafficinfo'               => $defaults['trafficinfo'],
+      'trafficinfo_state'         => $defaults['trafficinfo_state'],
+      'bicycleinfo'               => $defaults['bicycleinfo'],
+      'bicycleinfo_state'         => $defaults['bicycleinfo_state'],
+      'transitinfo'               => $defaults['transitinfo'],
+      'transitinfo_state'         => $defaults['transitinfo_state'],
+      'streetview_show'           => $defaults['streetview_show'],
+      'pancontrol'                => $defaults['pancontrol'],
+      'panoramio_use'             => $defaults['panoramio_use'],
+      'panoramio_show'            => $defaults['panoramio_show'],
+      'panoramio_state'           => $defaults['panoramio_state'],
+      'poi_show'                  => $defaults['poi_show'],
+      'transit_show'              => $defaults['transit_show'],
+      'map_marker'                => $defaults['node_map_marker'],
+      'markeraction'              => $defaults['markeraction'],
+      'markeractiontype'          => $defaults['markeractiontype'],
+      'minzoom'                   => $defaults['minzoom'],
+      'maxzoom'                   => $defaults['maxzoom'],
+      'nodezoom'                  => $defaults['nodezoom'],
+      'markermanagertype'         => $defaults['markermanagertype'],
+      'usemarkermanager'          => $defaults['usemarkermanager'],
+      'useclustermanager'         => $defaults['useclustermanager'],
+      'markerclusterer_style'     => $defaults['markerclusterer_style'],
+      'markerclusterer_zoom'      => $defaults['markerclusterer_zoom'],
+      'markerclusterer_size'      => $defaults['markerclusterer_size'],
+      'markerclusterer_minsize'   => $defaults['markerclusterer_minsize'],
+      'markerclusterer_title'     => $defaults['markerclusterer_title'],
+      'pansetting'                => $defaults['pansetting'],
+      'draggable'                 => $defaults['draggable'],
+      'styles'                    => $defaults['styles'],
+      'datanum'                   => count($latlons),
+      'latlons'                   => $latlons,
+      'minmaxes'                  => (empty($minmaxes) ? '' : implode(',', $minmaxes)),
+      'inputmap'                  => ($inputmap ? 1 : 0),
+      'extcontrol'                => $extcontrol,
+      'custom_content_enable'     => $defaults['custom_content_enable'],
+      'preload_data'              => $defaults['preload_data'],
+      'is_mobile'                 => (getlocations_is_mobile() ? 1 : 0),
+      'weather_use'               => $defaults['weather_use'],
+      'map_backgroundcolor'       => $defaults['map_backgroundcolor'],
+      'show_maplinks'             => $defaults['show_maplinks'],
+      'js_path'                   => base_path() . GETLOCATIONS_PATH . '/js/',
+      'info_path'                 => url("getlocations/info"),
+      'lidinfo_path'              => url("getlocations/lidinfo"),
+      'fullscreen'                => $defaults['fullscreen'],
       'show_bubble_on_one_marker' => $defaults['show_bubble_on_one_marker'],
-      'kml_url'                 => $defaults['kml_url'],
-      'kml_url_click'           => $defaults['kml_url_click'],
-      'kml_url_infowindow'      => $defaults['kml_url_infowindow'],
-      'kml_url_viewport'        => $defaults['kml_url_viewport'],
-      'kml_url_button'          => $defaults['kml_url_button'],
-      'kml_url_button_label'    => $defaults['kml_url_button_label'],
-      'kml_url_button_state'    => $defaults['kml_url_button_state'],
+      'kml_url'                   => $defaults['kml_url'],
+      'visual_refresh'            => $defaults['visual_refresh'],
+      'fullscreen_disable'        => $defaults['fullscreen_disable'],
+      'places'                    => $defaults['places'],
+      'search_places'             => $defaults['search_places'],
+      'getdirections_enabled'     => $defaults['getdirections_enabled'],
+      'is_https'                  => ($is_https ? 1 : 0),
     ),
   );
-  if ($defaults['weather_use']) {
-    $settings[$mapid]['weather_show'] = $defaults['weather_show'];
-    $settings[$mapid]['weather_state'] = $defaults['weather_state'];
-    $settings[$mapid]['weather_temp'] = $defaults['weather_temp'];
-    $settings[$mapid]['weather_speed'] = $defaults['weather_speed'];
-    $settings[$mapid]['weather_label'] = $defaults['weather_label'];
-    $settings[$mapid]['weather_cloud'] = $defaults['weather_cloud'];
-    $settings[$mapid]['weather_cloud_state'] = $defaults['weather_cloud_state'];
-    $settings[$mapid]['weather_clickable'] = $defaults['weather_clickable'];
-    $settings[$mapid]['weather_info'] = $defaults['weather_info'];
+  // only set these if wanted
+  if ($defaults['kml_url']) {
+    $settings[$mapid]['kml_url_click']        = $defaults['kml_url_click'];
+    $settings[$mapid]['kml_url_infowindow']   = $defaults['kml_url_infowindow'];
+    $settings[$mapid]['kml_url_viewport']     = $defaults['kml_url_viewport'];
+    $settings[$mapid]['kml_url_button']       = $defaults['kml_url_button'];
+    $settings[$mapid]['kml_url_button_label'] = $defaults['kml_url_button_label'];
+    $settings[$mapid]['kml_url_button_state'] = $defaults['kml_url_button_state'];
   }
+  if ($defaults['weather_use']) {
+    $settings[$mapid]['weather_show']        = $defaults['weather_show'];
+    $settings[$mapid]['weather_state']       = $defaults['weather_state'];
+    $settings[$mapid]['weather_temp']        = $defaults['weather_temp'];
+    $settings[$mapid]['weather_speed']       = $defaults['weather_speed'];
+    $settings[$mapid]['weather_label']       = $defaults['weather_label'];
+    $settings[$mapid]['weather_cloud']       = $defaults['weather_cloud'];
+    $settings[$mapid]['weather_cloud_state'] = $defaults['weather_cloud_state'];
+    $settings[$mapid]['weather_clickable']   = $defaults['weather_clickable'];
+    $settings[$mapid]['weather_info']        = $defaults['weather_info'];
+  }
+  if ($defaults['search_places']) {
+    $settings[$mapid]['search_places_size']        = $defaults['search_places_size'];
+    $settings[$mapid]['search_places_position']    = $defaults['search_places_position'];
+    $settings[$mapid]['search_places_label']       = $defaults['search_places_label'];
+    $settings[$mapid]['search_places_placeholder'] = $defaults['search_places_placeholder'];
+    $settings[$mapid]['search_places_dd']          = $defaults['search_places_dd'];
+    $settings[$mapid]['search_places_list']        = $defaults['search_places_list'];
+  }
+
   // categories
   if (isset($defaults['categories'])) {
     $settings[$mapid]['categories'] = $defaults['categories'];
@@ -3039,6 +3106,19 @@ function getlocations_map_display_basics_form($defaults, $labels = array()) {
     TRUE
   );
 
+  // map_resize
+  $form['map_resize'] = getlocations_element_map_checkbox(
+    t('Automatic map resize'),
+    $defaults['map_resize'],
+    t('Set the map dimensions to 100% if the browser is on a mobile device.')
+  );
+  // fullscreen_disable
+  $form['fullscreen_disable'] = getlocations_element_map_checkbox(
+    t('Disable Fullscreen'),
+    $defaults['fullscreen_disable'],
+    t('Disable the Fullscreen button if the browser is on a mobile device.')
+  );
+
   $form['styles'] = array(
     '#type' => 'textarea',
     '#title' => $label['styles'],
@@ -3050,8 +3130,8 @@ function getlocations_map_display_basics_form($defaults, $labels = array()) {
     $label['latlong'],
     $defaults['latlong'],
     t('The default center coordinates of a Google map, expressed as a decimal latitude and longitude, separated by a comma. This must not be 0,0'),
-    30,
-    30,
+    40,
+    50,
     TRUE
   );
 
@@ -3141,6 +3221,34 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     t('Can be a color name or HTML hex, eg #FF0000. Leave empty for the default color.'),
     10
   );
+
+  // Enable the visual refresh feature
+  $form['visual_refresh'] = getlocations_element_map_checkbox(
+    t('Google Visual Refresh'),
+    $defaults['visual_refresh'],
+    t('Enable the Visual Refresh feature.')
+  );
+
+  if ($config) {
+    $form['region_bias'] = getlocations_element_dd(
+      t('Regional bias'),
+      $defaults['region_bias'],
+      array('' => t('None')) + getlocations_get_countries_list(),
+      t('Bias the maps to a particular country')
+    );
+
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker')) {
+      $form['jquery_colorpicker_enabled'] = getlocations_element_map_checkbox(
+        t('Use jQuery Colorpicker'),
+        $defaults['jquery_colorpicker_enabled'],
+        t('Use the jQuery Colorpicker for selecting colors.')
+      );
+    }
+    else {
+      $form['jquery_colorpicker_enabled'] = array('#type' => 'value', '#value' => 0);
+    }
+  }
 
   if ($extras) {
 
@@ -3344,35 +3452,70 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     );
     $form['polygons_enable']['#suffix'] = '<div id="wrap-getlocations-polygons">';
 
-    $form['polygons_strokecolor'] = getlocations_element_map_tf(
-      t('Polygon line color'),
-      $defaults['polygons_strokecolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['polygons_strokecolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Polygon line color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['polygons_strokecolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['polygons_strokecolor'] = getlocations_element_map_tf(
+        t('Polygon line color'),
+        $defaults['polygons_strokecolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['polygons_strokeopacity'] = getlocations_element_map_tf(
       t('Polygon line opacity'),
       $defaults['polygons_strokeopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['polygons_strokeweight'] = getlocations_element_map_tf(
       t('Polygon line thickness'),
       $defaults['polygons_strokeweight'],
       t('Must be an integer.'),
-      10
+      10,
+      10,
+      TRUE
     );
-    $form['polygons_fillcolor'] = getlocations_element_map_tf(
-      t('Polygon fill color'),
-      $defaults['polygons_fillcolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['polygons_fillcolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Polygon fill color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['polygons_fillcolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['polygons_fillcolor'] = getlocations_element_map_tf(
+        t('Polygon fill color'),
+        $defaults['polygons_fillcolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['polygons_fillopacity'] = getlocations_element_map_tf(
       t('Polygon fill opacity'),
       $defaults['polygons_fillopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['polygons_clickable'] = getlocations_element_map_checkbox(
       t('Clickable'),
@@ -3401,35 +3544,70 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     );
     $form['rectangles_enable']['#suffix'] = '<div id="wrap-getlocations-rectangles">';
 
-    $form['rectangles_strokecolor'] = getlocations_element_map_tf(
-      t('Rectangle line color'),
-      $defaults['rectangles_strokecolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['rectangles_strokecolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Rectangle line color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['rectangles_strokecolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['rectangles_strokecolor'] = getlocations_element_map_tf(
+        t('Rectangle line color'),
+        $defaults['rectangles_strokecolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['rectangles_strokeopacity'] = getlocations_element_map_tf(
       t('Rectangle line opacity'),
       $defaults['rectangles_strokeopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['rectangles_strokeweight'] = getlocations_element_map_tf(
       t('Rectangle line thickness'),
       $defaults['rectangles_strokeweight'],
       t('Must be an integer.'),
-      10
+      10,
+      10,
+      TRUE
     );
-    $form['rectangles_fillcolor'] = getlocations_element_map_tf(
-      t('Rectangle fill color'),
-      $defaults['rectangles_fillcolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['rectangles_fillcolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Rectangle fill color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['rectangles_fillcolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['rectangles_fillcolor'] = getlocations_element_map_tf(
+        t('Rectangle fill color'),
+        $defaults['rectangles_fillcolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['rectangles_fillopacity'] = getlocations_element_map_tf(
       t('Rectangle fill opacity'),
       $defaults['rectangles_fillopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['rectangles_clickable'] = getlocations_element_map_checkbox(
       t('Clickable'),
@@ -3458,41 +3636,78 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     );
     $form['circles_enable']['#suffix'] = '<div id="wrap-getlocations-circles">';
 
-    $form['circles_strokecolor'] = getlocations_element_map_tf(
-      t('Circle line color'),
-      $defaults['circles_strokecolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['circles_strokecolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Circle line color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['circles_strokecolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['circles_strokecolor'] = getlocations_element_map_tf(
+        t('Circle line color'),
+        $defaults['circles_strokecolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['circles_strokeopacity'] = getlocations_element_map_tf(
       t('Circle line opacity'),
       $defaults['circles_strokeopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['circles_strokeweight'] = getlocations_element_map_tf(
       t('Circle line thickness'),
       $defaults['circles_strokeweight'],
       t('Must be an integer.'),
-      10
+      10,
+      10,
+      TRUE
     );
-    $form['circles_fillcolor'] = getlocations_element_map_tf(
-      t('Circle fill color'),
-      $defaults['circles_fillcolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['circles_fillcolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Circle fill color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['circles_fillcolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['circles_fillcolor'] = getlocations_element_map_tf(
+        t('Circle fill color'),
+        $defaults['circles_fillcolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['circles_fillopacity'] = getlocations_element_map_tf(
       t('Circle fill opacity'),
       $defaults['circles_fillopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['circles_radius'] = getlocations_element_map_tf(
       t('Circle radius'),
       $defaults['circles_radius'],
       t("The radius in meters on the Earth's surface."),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['circles_clickable'] = getlocations_element_map_checkbox(
       t('Clickable'),
@@ -3521,23 +3736,41 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     );
     $form['polylines_enable']['#suffix'] = '<div id="wrap-getlocations-polylines">';
 
-    $form['polylines_strokecolor'] = getlocations_element_map_tf(
-      t('Polyline line color'),
-      $defaults['polylines_strokecolor'],
-      t('Any CSS3 color such as HTML hex, eg #FF0000.'),
-      10
-    );
+    // jquery_colorpicker
+    if (module_exists('jquery_colorpicker') && $defaults['jquery_colorpicker_enabled']) {
+      $form['polylines_strokecolor'] = array(
+        '#type' => 'jquery_colorpicker',
+        '#title' => t('Polyline line color'),
+        '#default_value' => preg_replace("/^#/", '', $defaults['polylines_strokecolor']),
+        '#description' => t('Click on the Colorpicker icon to select a color'),
+      );
+    }
+    else {
+      $form['polylines_strokecolor'] = getlocations_element_map_tf(
+        t('Polyline line color'),
+        $defaults['polylines_strokecolor'],
+        t('HTML hex, eg #FF0000.'),
+        10,
+        10,
+        TRUE
+      );
+    }
+
     $form['polylines_strokeopacity'] = getlocations_element_map_tf(
       t('Polyline line opacity'),
       $defaults['polylines_strokeopacity'],
       t('Must be between 0 and 1.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['polylines_strokeweight'] = getlocations_element_map_tf(
       t('Polyline line thickness'),
       $defaults['polylines_strokeweight'],
       t('Must be an integer.'),
-      10
+      10,
+      10,
+      TRUE
     );
     $form['polylines_clickable'] = getlocations_element_map_checkbox(
       t('Clickable'),
@@ -3559,39 +3792,114 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     );
     $form['polylines_coords']['#suffix'] = '</div>';
 
-    $form['kml_url'] = getlocations_element_map_tf(
+    // KML
+    $form['kml_group'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Kml file'),
+      '#description' => t('Attach a kml file.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => (empty($defaults['kml_url']) ? TRUE : FALSE ),
+      '#tree' => FALSE,
+    );
+    $form['kml_group']['kml_url'] = getlocations_element_map_tf(
       t('Kml url'),
       $defaults['kml_url'],
       t('A full url to a publicly accessible kml file.')
     );
-    $form['kml_url_click'] = getlocations_element_map_checkbox(
+    $form['kml_group']['kml_url_click'] = getlocations_element_map_checkbox(
       t('Kml layer clickable'),
       $defaults['kml_url_click']
     );
-    $form['kml_url_infowindow'] = getlocations_element_map_checkbox(
+    $form['kml_group']['kml_url_infowindow'] = getlocations_element_map_checkbox(
       t('Suppress Kml layer InfoWindows'),
       $defaults['kml_url_infowindow']
     );
-    $form['kml_url_viewport'] = getlocations_element_map_checkbox(
+    $form['kml_group']['kml_url_viewport'] = getlocations_element_map_checkbox(
       t('Preserve viewport'),
       $defaults['kml_url_viewport']
     );
-    $form['kml_url_button'] = getlocations_element_map_checkbox(
+    $form['kml_group']['kml_url_button'] = getlocations_element_map_checkbox(
       t('Show toggle button'),
       $defaults['kml_url_button']
     );
-    $form['kml_url_button_label'] = getlocations_element_map_tf(
+    $form['kml_group']['kml_url_button_label'] = getlocations_element_map_tf(
       t('Label for toggle button'),
       $defaults['kml_url_button_label'],
       '',
       30
     );
-    $form['kml_url_button_state'] = getlocations_element_map_checkbox(
+    $form['kml_group']['kml_url_button_state'] = getlocations_element_map_checkbox(
       t('Activate Kml layer'),
       $defaults['kml_url_button_state'],
       t('Activate Kml layer when map is first displayed.')
     );
 
+    // search_places
+    // enable
+    $desc = t('Provide a textfield to query Google Places Search.');
+    if ($config) {
+      $desc .= ' ' . t('This will be enabled for all maps if enabled here.');
+    }
+    $form['search_places'] = getlocations_element_map_checkbox(
+      t('Enable Google Places Search'),
+      $defaults['search_places'],
+      $desc
+    );
+    $form['search_places']['#suffix'] = '<div id="wrap-getlocations-search-places">';
+    // size
+    $form['search_places_size'] = getlocations_element_map_tf(
+      t('Textbox width'),
+      $defaults['search_places_size'],
+      t('The width of the Google Places Search textbox. Must be a positive number.'),
+      10,
+      10,
+      TRUE
+    );
+    // placement
+    $pos = array(
+      'outside_above' => t('Above the map'),
+      'outside_below' => t('Below the map'),
+    );
+    $form['search_places_position'] = getlocations_element_dd(
+      t('Textbox Position'),
+      $defaults['search_places_position'],
+      $pos,
+      t('The position of the Google Places Search textbox.')
+    );
+    // label
+    $form['search_places_label'] = getlocations_element_map_tf(
+      t('Textbox label'),
+      $defaults['search_places_label'],
+      t('The label for the Google Places Search textbox.'),
+      30,
+      40
+    );
+    // placeholder
+    $form['search_places_placeholder'] = getlocations_element_map_tf(
+      t('Text in Textbox'),
+      $defaults['search_places_placeholder'],
+      t('The text inside the Google Places Search textbox. Leave empty for the default.'),
+      30,
+      40
+    );
+    // list
+    $form['search_places_list'] = getlocations_element_map_checkbox(
+      t('Provide a List of what was found linked to a bubble'),
+      $defaults['search_places_list']
+    );
+    // dropdown
+    $form['search_places_dd'] = getlocations_element_map_checkbox(
+      t('Provide a Dropdown instead of a Textbox for Google Places Search'),
+      $defaults['search_places_dd']
+    );
+    $form['search_places_dd']['#suffix'] = '</div>';
+
+    if ($config) {
+      $form['places'] = array(
+        '#type' => 'value',
+        '#value' => $defaults['places'],
+      );
+    }
 
   }
 
@@ -3608,23 +3916,31 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
  *   Returns
  *
  */
-function getlocations_paths_get() {
+function getlocations_paths_get($reset = FALSE) {
 
   $defaults = array(
-    'infobubble_path'              => GETLOCATIONS_PATH . '/js/infobubble.js',
-    'infobubble_options_path'      => GETLOCATIONS_PATH . '/js/infobubble_options.js',
-    'markermanager_path'           => GETLOCATIONS_PATH . '/js/markermanager.js',
-    'markerclusterer_path'         => GETLOCATIONS_PATH . '/js/markerclusterer.js',
-    'infowindow_options_path'      => GETLOCATIONS_PATH . '/js/infowindow_options.js',
-    'getlocations_path'            => GETLOCATIONS_PATH . '/js/getlocations.js',
-    'getlocations_polygons_path'   => GETLOCATIONS_PATH . '/js/getlocations_polygons.js',
-    'getlocations_rectangles_path' => GETLOCATIONS_PATH . '/js/getlocations_rectangles.js',
-    'getlocations_circles_path'    => GETLOCATIONS_PATH . '/js/getlocations_circles.js',
-    'getlocations_polylines_path'  => GETLOCATIONS_PATH . '/js/getlocations_polylines.js',
-    'getlocations_categories_path' => GETLOCATIONS_PATH . '/js/getlocations_categories.js',
+    'infobubble_path'                 => GETLOCATIONS_PATH . '/js/infobubble.js',
+    'infobubble_options_path'         => GETLOCATIONS_PATH . '/js/infobubble_options.js',
+    'markermanager_path'              => GETLOCATIONS_PATH . '/js/markermanager.js',
+    'markerclusterer_path'            => GETLOCATIONS_PATH . '/js/markerclusterer.js',
+    'infowindow_options_path'         => GETLOCATIONS_PATH . '/js/infowindow_options.js',
+    'getlocations_path'               => GETLOCATIONS_PATH . '/js/getlocations.js',
+    'getlocations_polygons_path'      => GETLOCATIONS_PATH . '/js/getlocations_polygons.js',
+    'getlocations_rectangles_path'    => GETLOCATIONS_PATH . '/js/getlocations_rectangles.js',
+    'getlocations_circles_path'       => GETLOCATIONS_PATH . '/js/getlocations_circles.js',
+    'getlocations_polylines_path'     => GETLOCATIONS_PATH . '/js/getlocations_polylines.js',
+    'getlocations_categories_path'    => GETLOCATIONS_PATH . '/js/getlocations_categories.js',
+    'getlocations_search_places_path' => GETLOCATIONS_PATH . '/js/getlocations_search_places.js',
+    'getlocations_geo_path'           => GETLOCATIONS_PATH . '/js/getlocations_geo.js',
+    'getlocations_preview_path'       => GETLOCATIONS_PATH . '/js/getlocations_preview.js',
   );
-  $settings = variable_get('getlocations_paths', $defaults);
-  $getlocations_paths = getlocations_adjust_vars($defaults, $settings);
+  if ($reset) {
+    $getlocations_paths = $defaults;
+  }
+  else {
+    $settings = variable_get('getlocations_paths', $defaults);
+    $getlocations_paths = getlocations_adjust_vars($defaults, $settings);
+  }
 
   return $getlocations_paths;
 }
@@ -3699,9 +4015,17 @@ function getlocations_get_polygon_settings($defaults) {
   $polygons = array();
   $ct = 0;
 
+  if (! preg_match("/^#/",  $defaults['polygons_strokecolor'])) {
+    $defaults['polygons_strokecolor'] = '#' . $defaults['polygons_strokecolor'];
+  }
+  if (! preg_match("/^#/",  $defaults['polygons_fillcolor'])) {
+    $defaults['polygons_fillcolor'] = '#' . $defaults['polygons_fillcolor'];
+  }
+
   foreach ($coords_arr AS $line) {
     $lla = array();
     // set defaults
+
     $polygons['polygons'][$ct]['strokeColor']   = $defaults['polygons_strokecolor'];
     $polygons['polygons'][$ct]['strokeOpacity'] = $defaults['polygons_strokeopacity'];
     $polygons['polygons'][$ct]['strokeWeight']  = $defaults['polygons_strokeweight'];
@@ -3770,6 +4094,13 @@ function getlocations_get_rectangle_settings($defaults) {
   $lla = array();
   $rectangles = array();
   $ct = 0;
+
+  if (! preg_match("/^#/",  $defaults['rectangles_strokecolor'])) {
+    $defaults['rectangles_strokecolor'] = '#' . $defaults['rectangles_strokecolor'];
+  }
+  if (! preg_match("/^#/",  $defaults['rectangles_fillcolor'])) {
+    $defaults['rectangles_fillcolor'] = '#' . $defaults['rectangles_fillcolor'];
+  }
 
   foreach ($coords_arr AS $line) {
     $lla = array();
@@ -3842,6 +4173,13 @@ function getlocations_get_circle_settings($defaults) {
   $lla = array();
   $circles = array();
   $ct = 0;
+
+  if (! preg_match("/^#/",  $defaults['circles_strokecolor'])) {
+    $defaults['circles_strokecolor'] = '#' . $defaults['circles_strokecolor'];
+  }
+  if (! preg_match("/^#/",  $defaults['circles_fillcolor'])) {
+    $defaults['circles_fillcolor'] = '#' . $defaults['circles_fillcolor'];
+  }
 
   foreach ($coords_arr AS $line) {
     $lla = array();
@@ -3919,6 +4257,10 @@ function getlocations_get_polyline_settings($defaults) {
   $lla = array();
   $polylines = array();
   $ct = 0;
+
+  if (! preg_match("/^#/",  $defaults['polylines_strokecolor'])) {
+    $defaults['polylines_strokecolor'] = '#' . $defaults['polylines_strokecolor'];
+  }
 
   foreach ($coords_arr AS $line) {
     $lla = array();
@@ -4448,7 +4790,7 @@ function getlocations_get_search_distance_sql($latitude, $longitude, $searchdist
  *   A floating point number where the number in meters after the initially passed scalar has been round()'d
  */
 function getlocations_convert_distance_to_meters($distance, $distance_unit = 'km') {
-  if (!is_numeric($distance) || $distance == 0) {
+  if (!is_numeric($distance) || ! $distance > 0) {
     return NULL;
   }
   $units = array(
@@ -4478,7 +4820,7 @@ function getlocations_convert_distance_to_meters($distance, $distance_unit = 'km
  *   A floating point number where the converted number has been round()'d
  */
 function getlocations_convert_meters_to_distance($meters, $distance_unit = 'km') {
-  if (!is_numeric($meters) || $meters == 0) {
+  if (!is_numeric($meters) || ! $meters > 0) {
     return NULL;
   }
   $units = array(
@@ -4803,7 +5145,7 @@ function getlocations_theme() {
         'node' => '',
       ),
     ),
-    'getlocations_info' => array(
+    'getlocations_adinfo' => array(
       'variables' => array(
         'location' => NULL,
       ),
@@ -4908,13 +5250,160 @@ function theme_getlocations_show($variables) {
     $output .= $returnlink;
   }
 
-  // do map
+  if ($defaults['map_resize'] && getlocations_is_mobile()) {
+    $width = '100%';
+    $height = '100%';
+  }
+
+  // show maplinks if enabled
   if ($defaults['show_maplinks']) {
     $output .= '<a id="maptop_' . $mapid . '" name="maptop_' . $mapid . '"></a>';
   }
+  // search_places
+  $sp = '';
+  if ($defaults['search_places']) {
+
+    $sp .= '<div class="search_places_input_wrapper">';
+    if ($defaults['search_places_label']) {
+      $sp .= '<label for="search_places_select_' . $mapid . '">' . $defaults['search_places_label'] . '</label>';
+    }
+
+    if ($defaults['search_places_dd']) {
+      // alternative dropdown
+      $sp_opts = array(
+      'accounting'              => t('Accounting'),
+      'airport'                 => t('Airport'),
+      'amusement_park'          => t('Amusement park'),
+      'aquarium'                => t('Aquarium'),
+      'art_gallery'             => t('Art gallery'),
+      'atm'                     => t('ATM'),
+      'bakery'                  => t('Bakery'),
+      'bank'                    => t('Bank'),
+      'bar'                     => t('Bar'),
+      'beauty_salon'            => t('Beauty salon'),
+      'bicycle_store'           => t('Bicycle store'),
+      'book_store'              => t('Book store'),
+      'bowling_alley'           => t('Bowling alley'),
+      'bus_station'             => t('Bus station'),
+      'cafe'                    => t('Cafe'),
+      'campground'              => t('Campground'),
+      'car_dealer'              => t('Car dealer'),
+      'car_rental'              => t('Car rental'),
+      'car_repair'              => t('Car repair'),
+      'car_wash'                => t('Car wash'),
+      'casino'                  => t('Casino'),
+      'cemetery'                => t('Cemetery'),
+      'church'                  => t('Church'),
+      'city_hall'               => t('City hall'),
+      'clothing_store'          => t('Clothing store'),
+      'convenience_store'       => t('Convenience store'),
+      'courthouse'              => t('Courthouse'),
+      'dentist'                 => t('Dentist'),
+      'department_store'        => t('Department store'),
+      'doctor'                  => t('Doctor'),
+      'electrician'             => t('Electrician'),
+      'electronics_store'       => t('Electronics store'),
+      'embassy'                 => t('Embassy'),
+      'establishment'           => t('Establishment'),
+      'finance'                 => t('Finance'),
+      'fire_station'            => t('Fire station'),
+      'florist'                 => t('Florist'),
+      'food'                    => t('Food'),
+      'funeral_home'            => t('Funeral home'),
+      'furniture_store'         => t('Furniture store'),
+      'gas_station'             => t('Gas station'),
+      'general_contractor'      => t('General contractor'),
+      'grocery_or_supermarket'  => t('Grocery or supermarket'),
+      'gym'                     => t('Gym'),
+      'hair_care'               => t('Hair care'),
+      'hardware_store'          => t('Hardware store'),
+      'health'                  => t('Health'),
+      'hindu_temple'            => t('Hindu temple'),
+      'home_goods_store'        => t('Home goods store'),
+      'hospital'                => t('Hospital'),
+      'insurance_agency'        => t('Insurance agency'),
+      'jewelry_store'           => t('Jewelry store'),
+      'laundry'                 => t('Laundry'),
+      'lawyer'                  => t('Lawyer'),
+      'library'                 => t('Library'),
+      'liquor_store'            => t('Liquor store'),
+      'local_government_office' => t('Local government office'),
+      'locksmith'               => t('Locksmith'),
+      'lodging'                 => t('Lodging'),
+      'meal_delivery'           => t('Meal delivery'),
+      'meal_takeaway'           => t('Meal takeaway'),
+      'mosque'                  => t('Mosque'),
+      'movie_rental'            => t('Movie rental'),
+      'movie_theater'           => t('Movie theater'),
+      'moving_company'          => t('Moving company'),
+      'museum'                  => t('Museum'),
+      'night_club'              => t('Night club'),
+      'painter'                 => t('Painter'),
+      'park'                    => t('Park'),
+      'parking'                 => t('Parking'),
+      'pet_store'               => t('Pet store'),
+      'pharmacy'                => t('Pharmacy'),
+      'physiotherapist'         => t('Physiotherapist'),
+      'place_of_worship'        => t('Place of worship'),
+      'plumber'                 => t('Plumber'),
+      'police'                  => t('Police'),
+      'post_office'             => t('Post office'),
+      'real_estate_agency'      => t('Real estate agency'),
+      'restaurant'              => t('Restaurant'),
+      'roofing_contractor'      => t('Roofing contractor'),
+      'rv_park'                 => t('RV park'),
+      'school'                  => t('School'),
+      'shoe_store'              => t('Shoe store'),
+      'shopping_mall'           => t('Shopping mall'),
+      'spa'                     => t('Spa'),
+      'stadium'                 => t('Stadium'),
+      'storage'                 => t('Storage'),
+      'store'                   => t('Store'),
+      'subway_station'          => t('Subway station'),
+      'synagogue'               => t('Synagogue'),
+      'taxi_stand'              => t('Taxi stand'),
+      'train_station'           => t('Train station'),
+      'travel_agency'           => t('Travel agency'),
+      'university'              => t('University'),
+      'veterinary_care'         => t('Veterinary care'),
+      'zoo'                     => t('Zoo'),
+      );
+
+      $sp .= '<select id="search_places_select_' . $mapid . '" class="form-select" >';
+      foreach ($sp_opts AS $k_opt => $opt) {
+        $sel = '';
+        if ($k_opt == 'establishment') {
+          $sel = 'selected';
+        }
+        $sp .= '<option value="' . $k_opt . '" ' . $sel . '>' . $opt . '</option>';
+      }
+      $sp .= '</select>';
+      $sp .= '&nbsp;&nbsp;<input type="button" value="' . t('Go') . '" id="search_places_go_btn_' . $mapid . '" class="form-submit" />';
+      $sp .= '&nbsp;&nbsp;<input type="button" value="' . t('Reset') . '" onClick="Drupal.getlocations_search_places_clearmarkers(\'' . $mapid . '\', true)"  class="form-submit" />';
+      $sp .= '</div>';
+    }
+    else {
+      $placeholder = '';
+      if ($defaults['search_places_placeholder']) {
+        $placeholder = 'placeholder="' . $defaults['search_places_placeholder'] . '"';
+      }
+      $sp .= '<input type="text" id="search_places_input_' . $mapid . '" size="' . $defaults['search_places_size'] . '" class="form-text" ' . $placeholder . ' />';
+      $sp .= '&nbsp;&nbsp;<input type="button" value="' . t('Reset') . '" onClick="Drupal.getlocations_search_places_clearmarkers(\'' . $mapid . '\', true)"  class="form-submit" />';
+      $sp .= '</div>';
+    }
+    if ($defaults['search_places_list']) {
+      $sp .= '<div class="sp_listing_wrapper"><p><b>' . t('Google Places search results') . '</b></p><div class="sp_listing"><ul class="sp_ul" id="search_places_results_' . $mapid . '"></ul></div></div>';
+    }
+  }
+  if ($defaults['search_places'] && $defaults['search_places_position'] == 'outside_above') {
+    $output .= $sp;
+  }
+
+  // wrap the map
   $output .= '<div id="getlocations_map_wrapper_' . $mapid . '"  style="width: ' . $width . '; height: ' . $height . '" >';
   $output .= '<div class="getlocations_map_canvas" id="getlocations_map_canvas_' . $mapid . '" style="width: 100%; height: 100%" ></div>';
   $output .= '</div>';
+
   // show maplinks if enabled
   if ($defaults['show_maplinks']) {
     $output .= '<div class="getlocations_map_links" id="getlocations_map_links_' . $mapid . '" ><ul></ul></div>';
@@ -4959,10 +5448,26 @@ function theme_getlocations_show($variables) {
     $buttons[] = '<input type="button" value="' . $kmlbuttonlabel . '" id="getlocations_toggleKmlLayer_' . $mapid . '" class="form-submit"  />';
   }
 
+  if (module_exists('getlocations_search')) {
+    // search area shape
+    if (isset($defaults['search_radshape_toggle']) && $defaults['search_radshape_toggle'] && $defaults['search_radshape_enable']) {
+      $buttons[] = '<input type="button" value="' . t('Search area !t', array('!t' => ($defaults['search_radshape_toggle_active'] ? t('Off') : t('On')))) . '" id="getlocations_search_toggleShape_' . $mapid . '" class="form-submit" />';
+    }
+    // search marker toggle button
+    if (isset($defaults['do_search_marker']) && $defaults['do_search_marker'] && $defaults['search_marker_toggle']) {
+      $buttons[] = '<input type="button" value="' . t('Marker !t', array('!t' => ($defaults['search_marker_toggle_active'] ? t('Off') : t('On')))) . '" id="getlocations_search_toggleMarker_' . $mapid . '" class="form-submit" />';
+    }
+  }
+
   if (count($buttons)) {
     $output .= '<div class="getlocations_map_buttons container-inline">';
     $output .= implode('&nbsp;', $buttons);
     $output .= '</div>';
+  }
+
+  // search_places
+  if ($defaults['search_places'] && $defaults['search_places_position'] == 'outside_below') {
+    $output .= $sp;
   }
 
   return $output;
@@ -4977,7 +5482,7 @@ function theme_getlocations_show($variables) {
  *   Returns $output
  *
  */
-function theme_getlocations_info($variables) {
+function theme_getlocations_adinfo($variables) {
   $location = $variables['location'];
   $output = '';
 
@@ -5294,6 +5799,15 @@ function theme_getlocations_settings_form($variables) {
   $form['getlocations_default']['usemarkermanager']['#prefix'] = '<div id="wrap-getlocations-markeropts">';
   $form['getlocations_default']['maxzoom']['#suffix'] = '</div>';
 
+  // preview
+  $getlocations_defaults = getlocations_defaults();
+  $getlocations_defaults['extcontrol'] = 'preview_map';
+  $mapid = getlocations_setup_map($getlocations_defaults);
+  $minmaxes = '';
+  $latlons = array();
+  getlocations_js_settings_do($getlocations_defaults, $latlons, $minmaxes, $mapid, FALSE, $getlocations_defaults['extcontrol']);
+  $preview_map = theme('getlocations_show', array('width' => $getlocations_defaults['width'] , 'height' => $getlocations_defaults['height'] , 'defaults' => $getlocations_defaults, 'mapid' => $mapid, 'type' => '', 'node' => ''));
+  $form['getlocations_preview']['preview_map']['#markup'] = '<div id="getlocations_preview_map">' . $preview_map . '</div>';
 
   $output .= drupal_render_children($form);
   return $output;

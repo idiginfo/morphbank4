@@ -28,7 +28,18 @@
 }
 
 /* map links feature */
+.getlocations_map_links {
+  border: 1px solid #CCCCCC;
+  width: 494px;
+  padding: 4px;
+  margin-bottom: 8px;
+  margin-top: 8px;
+  max-height: 150px;
+  overflow: auto;
+}
 .getlocations_map_links ul {
+  list-style-type: none;
+  margin-left: 0px;
 }
 
 /**
@@ -71,3 +82,64 @@ div.fullscreen {
   overflow: hidden !important;
 }
 
+/* search_places css */
+.search_places_input_wrapper {
+  padding-bottom: 4px;
+}
+.sp_left1 {
+  float: left;
+  width: 25px;
+  padding-right: 8px;
+}
+.sp_left2 {
+  float: left;
+  width: 275px;
+}
+.sp_main {
+  clear: both;
+  width: 310px;
+}
+.placeIcon {
+  height: 25px;
+  width: 25px;
+}
+.sp_left3 {
+  float: left;
+  width: 75px;
+  padding-right: 8px;
+}
+.sp_left4 {
+  float: left;
+  width: 225px;
+}
+.sp_picture {
+}
+
+.sp_listing_wrapper {
+  border: 1px solid #CCCCCC;
+  width: 494px;
+  padding: 4px;
+  margin-bottom: 8px;
+}
+.sp_listing {
+  max-height: 200px;
+  overflow: auto;
+  cursor: pointer;
+}
+.sp_ul {
+  list-style-type: none;
+  margin-left: 0px;
+}
+.sp_link {
+  vertical-align: middle;
+}
+.sp_link:hover {
+  background: #F0F0F0;
+}
+
+.sp_address {
+}
+.sp_phone {
+}
+.sp_web {
+}

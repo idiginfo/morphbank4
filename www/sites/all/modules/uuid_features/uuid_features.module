@@ -97,7 +97,9 @@ function uuid_features_features_pipe_taxonomy_alter(&$pipe, $data, $export) {
         foreach (taxonomy_get_tree($vocab->vid) as $term) {
           uuid_term_features_get_dependencies($export, $term->uuid);
         }
-        $pipe['uuid_term'] = array_merge($pipe['uuid_term'], $export['features']['uuid_term']);
+        if (!empty($export['features']['uuid_term'])) {
+          $pipe['uuid_term'] = array_merge($pipe['uuid_term'], $export['features']['uuid_term']);
+        }
       }
     }
   }

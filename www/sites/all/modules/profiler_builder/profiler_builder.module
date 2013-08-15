@@ -547,23 +547,34 @@ function profiler_builder_profiler_builder_defined_libraries() {
   $defined_libs['plupload']['patch'][] = "http://drupal.org/files/plupload-1_5_6-rm_examples-1903850-5.patch";
   // colorbox / lightbox style plugin
   $defined_libs['colorbox']['_name'] = t('ColorBox');
-  $defined_libs['colorbox']['download_url'] = "http://colorpowered.com/colorbox/colorbox.zip";
+  $defined_libs['colorbox']['download_url'] = "https://github.com/jackmoore/colorbox/archive/master.zip";
+  // jquery superfish for menus
+  $defined_libs['superfish']['_name'] = t('jQuery Superfish');
+  $defined_libs['superfish']['download_url'] = "https://github.com/mehrpadin/Superfish-for-Drupal/archive/master.zip";
+  // masonry
+  $defined_libs['masonry']['_name'] = t('jQuery Masonry');
+  $defined_libs['masonry']['download_url'] = "http://masonry.desandro.com/jquery.masonry.min.js";
+  // oauth fork for drupal
+  $defined_libs['oauth']['_name'] = t('OAuth Drupal fork');
+  $defined_libs['oauth']['download_url'] = "https://github.com/juampy72/OAuth-PHP/archive/master.zip";
+  // joyride
+  $defined_libs['joyride']['_name'] = t('jQuery Joyride');
+  $defined_libs['joyride']['download_url'] = "https://github.com/zurb/joyride/archive/v2.0.3.tar.gz";
   // twitter bootstrap jquery / css libraries
   $defined_libs['bootstrap']['_name'] = t('Twitter Bootstrap');
   $defined_libs['bootstrap']['_local'] = TRUE;
   $defined_libs['bootstrap']['destination'] = "themes/contrib/bootstrap";
   $defined_libs['bootstrap']['download_url'] = "http://twitter.github.com/bootstrap/assets/bootstrap.zip";
-  // masonry hasn't cleared yet but will soon
-  $defined_libs['masonry']['_name'] = t('jQuery Masonry');
-  $defined_libs['masonry']['_local'] = TRUE;
-  $defined_libs['masonry']['download_url'] = "http://masonry.desandro.com/jquery.masonry.min.js";
+
+  // libraries that aren't in the d.o. packaging white list yet
+
   // current license debate, this has not passed yet
   $defined_libs['fitvids']['_name'] = t('FitVids');
   $defined_libs['fitvids']['_local'] = TRUE;
   $defined_libs['fitvids']['download_url'] = "https://raw.github.com/davatron5000/FitVids.js/master/jquery.fitvids.js";
-  // oauth hasn't cleared packaging script but will soon
-  $defined_libs['oauth']['_name'] = t('OAuth Drupal fork');
-  $defined_libs['oauth']['_local'] = TRUE;
-  $defined_libs['oauth']['download_url'] = "https://github.com/juampy72/OAuth-PHP/archive/master.zip";
+  // views_timelinejs
+  $defined_libs['timeline']['_name'] = t('Views TimelineJS');
+  $defined_libs['timeline']['_local'] = TRUE;
+  $defined_libs['timeline']['download_url'] = "https://github.com/VeriteCo/TimelineJS/archive/master.zip";
   return $defined_libs;
 }

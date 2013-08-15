@@ -9,10 +9,12 @@
 (function ($) {
 
   var search_markersArray = [];
+  var radShape = [];
+  var searchmarker = [];
+  var shapetoggleState = [];
+  var markertoggleState = [];
 
   function getlocations_search_init() {
-
-    var searchmarker = {};
 
     // each map has its own settings
     $.each(Drupal.settings.getlocations_search, function (key, searchsettings) {
@@ -25,13 +27,51 @@
         gset.show_distance = searchsettings.show_distance;
         gset.do_search_marker = searchsettings.do_search_marker;
         gset.search_marker = searchsettings.search_marker;
+        gset.search_distance_type = searchsettings.search_distance_type;
+        gset.search_marker_toggle = searchsettings.search_marker_toggle;
         gset.search_info_path = searchsettings.search_info_path;
+        gset.zoom_on_single_use = searchsettings.zoom_on_single_use;
         var autocomplete_bias = searchsettings.autocomplete_bias;
         var restrict_by_country = searchsettings.restrict_by_country;
         var country = searchsettings.country;
         var maxzoom = searchsettings.maxzoom;
+
         var mapid = key;
         var mapid2 = key.replace("_", "-");
+
+        // search area shape
+        gset.search_radshape_enable = searchsettings.search_radshape_enable;
+        if (searchsettings.search_radshape_enable) {
+          if (searchsettings.search_distance_type == 'dist') {
+            // radius circle
+            radShape[key] = new google.maps.Circle({
+              map: getlocations_map[key],
+              strokeColor: searchsettings.search_radshape_strokecolor,
+              strokeOpacity: searchsettings.search_radshape_strokeopacity,
+              strokeWeight: searchsettings.search_radshape_strokeweight,
+              fillColor: searchsettings.search_radshape_fillcolor,
+              fillOpacity: searchsettings.search_radshape_fillopacity,
+              visible: false,
+              clickable: false
+            });
+          }
+          else if (searchsettings.search_distance_type == 'mbr') {
+            // rectangle
+            var shcoords = new google.maps.LatLng(parseFloat(0.0), parseFloat(0.0));
+            var shbounds = new google.maps.LatLngBounds(shcoords, shcoords);
+            radShape[key] = new google.maps.Rectangle({
+              map: getlocations_map[key],
+              strokeColor: searchsettings.search_radshape_strokecolor,
+              strokeOpacity: searchsettings.search_radshape_strokeopacity,
+              strokeWeight: searchsettings.search_radshape_strokeweight,
+              fillColor: searchsettings.search_radshape_fillcolor,
+              fillOpacity: searchsettings.search_radshape_fillopacity,
+              visible: false,
+              clickable: false
+            });
+          }
+          $("#getlocations_search_toggleShape_" + key).attr('disabled', true);
+        }
 
         if (gset.markermanagertype == 1 && gset.usemarkermanager == 1) {
           gset.usemarkermanager = true;
@@ -86,20 +126,78 @@
           });
         }
 
-        if (gset.is_mobile) {
-          if (navigator && navigator.geolocation) {
-            $("#getlocations_search_geolocation_button-" + mapid2).click( function () {
-              do_Geolocationbutton(getlocations_map[key], gset, key);
-              return false;
+        // geolocation by browser
+        if (gset.is_mobile && navigator && navigator.geolocation) {
+          $("#getlocations_search_geolocation_button_" + key).click( function () {
+            do_Geolocationbutton(getlocations_map[key], gset, key);
+          });
+        }
+        else {
+          $("#getlocations_search_geolocation_button_wrapper_" + key).hide();
+        }
+
+        // search area shape
+        if (searchsettings.search_radshape_enable) {
+          if (searchsettings.search_radshape_toggle) {
+            if ( searchsettings.search_radshape_toggle_active) {
+              shapetoggleState[key] = true;
+            }
+            else {
+              shapetoggleState[key] = false;
+            }
+            $("#getlocations_search_toggleShape_" + key).click( function() {
+              var label = '';
+              if (shapetoggleState[key]) {
+                radShape[key].setVisible(false);
+                shapetoggleState[key] = false;
+                label = Drupal.t('Search area On');
+              }
+              else {
+                radShape[key].setVisible(true);
+                shapetoggleState[key] = true;
+                label = Drupal.t('Search area Off');
+              }
+              $(this).val(label);
             });
           }
           else {
-            $("#getlocations_search_geolocation_button-" + mapid2).hide();
+            shapetoggleState[key] = true;
           }
         }
+
+        // search marker toggle
+        if (searchsettings.do_search_marker) {
+          if (searchsettings.search_marker_toggle) {
+            $("#getlocations_search_toggleMarker_" + key).attr('disabled', true);
+            if ( searchsettings.search_marker_toggle_active > 0 ) {
+              markertoggleState[key] = true;
+            }
+            else {
+              markertoggleState[key] = false;
+            }
+            $("#getlocations_search_toggleMarker_" + key).click( function() {
+              var label = '';
+              if (markertoggleState[key]) {
+                searchmarker[key].setVisible(false);
+                markertoggleState[key] = false;
+                label = Drupal.t('Marker On');
+              }
+              else {
+                searchmarker[key].setVisible(true);
+                markertoggleState[key] = true;
+                label = Drupal.t('Marker Off');
+              }
+              $(this).val(label);
+            });
+          }
+          else {
+            markertoggleState[key] = true;
+          }
+        }
+
       }
-    });
-  }
+    }); // end each
+  } // end init
 
   // cleans out any existing markers, sets up a new geocoder and runs it, filling in the results.
   function do_Geocode(map, gs, adrs, mkey) {
@@ -119,7 +217,7 @@
       oldslat = $("#getlocations_search_slat_" + mkey).html();
       oldslon = $("#getlocations_search_slon_" + mkey).html();
       if (oldslat) {
-        searchmarker.setMap();
+        searchmarker[mkey].setMap();
       }
     }
 
@@ -139,10 +237,16 @@
       $("div#getlocations_map_links_" + mkey + " ul").html("");
     }
 
+    // switch off area shape
+    if (gs.search_radshape_enable) {
+      radShape[mkey].setVisible(false);
+      $("#getlocations_search_toggleShape_" + mkey).attr('disabled', true);
+    }
+
     // set up some display vars
     var unitsdisplay = {'km': Drupal.t('Kilometer'), 'm': Drupal.t('Meter'), 'mi': Drupal.t('Mile'), 'yd': Drupal.t('Yard'), 'nmi': Drupal.t('Nautical mile')};
     var unitsdisplaypl = {'km': Drupal.t('Kilometers'), 'm': Drupal.t('Meters'), 'mi': Drupal.t('Miles'), 'yd': Drupal.t('Yards'), 'nmi': Drupal.t('Nautical miles')};
-    var typesdisplay = {'all': Drupal.t('All'), 'node': Drupal.t('Nodes'), 'user': Drupal.t('Users'), 'term': Drupal.t('Terms'), 'comment': Drupal.t('Comments')};
+    var typesdisplay = {'all': Drupal.t('All'), 'node': Drupal.t('Nodes'), 'user': Drupal.t('Users'), 'taxonomy_term': Drupal.t('Taxonomy Terms'), 'term': Drupal.t('Terms'), 'comment': Drupal.t('Comments')};
     // get settings from the DOM
     var mapid2 = mkey.replace("_", "-");
     var distance = $("#edit-getlocations-search-distance-" + mapid2).val();
@@ -187,6 +291,7 @@
           type = infoarr[2];
           latout = infoarr[3];
           lonout = infoarr[4];
+          distance_meters = infoarr[5];
           locationct = 0;
           for (var i = 0; i < locations.length; i++) {
             lidkey = 'nid';
@@ -267,15 +372,23 @@
           // search marker
           if (gs.do_search_marker) {
             smark = gs.search_marker;
-            makeSearchcenterMarker(slat, slon, smark, map);
+            makeSearchcenterMarker(slat, slon, smark, map, mkey);
           }
           if (locationct == 1) {
-            map.setZoom(gs.nodezoom);
+            if (gs.zoom_on_single_use) {
+              map.setZoom(gs.nodezoom);
+            }
             // show_bubble_on_one_marker
             if (gs.show_bubble_on_one_marker && (gs.useInfoWindow || gs.useInfoBubble)) {
               google.maps.event.trigger(marker, 'click');
             }
           }
+
+          // search area shape
+          if (gs.search_radshape_enable) {
+            makeRadShape(slat, slon, distance_meters, gs, mkey);
+          }
+
         });
       }
       else {
@@ -287,7 +400,7 @@
   }
 
   function do_Geolocationbutton(map, gs, mkey) {
-    var statusdiv = '#getlocations_search_geolocation_status';
+    var statusdiv = '#getlocations_search_geolocation_status_' + mkey;
     var statusmsg = '';
     $(statusdiv).html(statusmsg);
     navigator.geolocation.getCurrentPosition(
@@ -307,10 +420,10 @@
     );
   }
 
-  function makeSearchcenterMarker(slat, slon, smark, map) {
+  function makeSearchcenterMarker(slat, slon, smark, map, k) {
     smarkdone = Drupal.getlocations.getIcon(smark);
     var p = new google.maps.LatLng(slat, slon);
-    searchmarker = new google.maps.Marker({
+    searchmarker[k] = new google.maps.Marker({
       icon: smarkdone.image,
       shadow: smarkdone.shadow,
       shape: smarkdone.shape,
@@ -319,6 +432,46 @@
       title: Drupal.t('Search center'),
       optimized: false
     });
+    if (markertoggleState[k]) {
+      searchmarker[k].setVisible(true);
+    }
+    else {
+      searchmarker[k].setVisible(false);
+    }
+    $("#getlocations_search_toggleMarker_" + k).attr('disabled', false);
+  }
+
+  // search area shape
+  function makeRadShape(slat, slon, distance_meters, gs, k) {
+    var done = false;
+    if (gs.search_distance_type == 'dist') {
+      // circle
+      var p = new google.maps.LatLng(parseFloat(slat), parseFloat(slon));
+      radShape[k].setRadius(parseInt(distance_meters));
+      radShape[k].setCenter(p);
+      done = true;
+    }
+    else if (gs.search_distance_type == 'mbr') {
+      // rectangle
+      var lats = Drupal.getlocations.geo.earth_latitude_range(slat, slon, distance_meters);
+      var lngs = Drupal.getlocations.geo.earth_longitude_range(slat, slon, distance_meters);
+
+      var mcoords = [];
+      mcoords[0] = new google.maps.LatLng(parseFloat(lats[0]), parseFloat(lngs[0]));
+      mcoords[1] = new google.maps.LatLng(parseFloat(lats[1]), parseFloat(lngs[1]));
+      var b = new google.maps.LatLngBounds(mcoords[0], mcoords[1]);
+      radShape[k].setBounds(b);
+      done = true;
+    }
+    if (done) {
+      if (shapetoggleState[k]) {
+        radShape[k].setVisible(true);
+      }
+      else {
+        radShape[k].setVisible(false);
+      }
+      $("#getlocations_search_toggleShape_" + k).attr('disabled', false);
+    }
   }
 
   // Deletes all markers in the array by removing references to them

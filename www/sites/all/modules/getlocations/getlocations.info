@@ -8,9 +8,9 @@ dependencies[] = libraries
 files[] = "views/getlocations_plugin_style_map.inc"
 
 
-; Information added by drupal.org packaging script on 2013-06-03
-version = "7.x-1.7"
+; Information added by drupal.org packaging script on 2013-07-06
+version = "7.x-1.8"
 core = "7.x"
 project = "getlocations"
-datestamp = "1370285458"
+datestamp = "1373123453"
 

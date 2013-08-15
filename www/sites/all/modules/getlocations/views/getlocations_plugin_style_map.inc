@@ -130,6 +130,19 @@ class getlocations_plugin_style_map extends views_plugin_style {
     $options['kml_url_button']           = array('default' => $getlocations_defaults['kml_url_button']);
     $options['kml_url_button_label']     = array('default' => $getlocations_defaults['kml_url_button_label']);
     $options['kml_url_button_state']     = array('default' => $getlocations_defaults['kml_url_button_state']);
+    $options['visual_refresh']           = array('default' => $getlocations_defaults['visual_refresh']);
+    $options['region_bias']              = array('default' => $getlocations_defaults['region_bias']);
+    $options['fullscreen_disable']       = array('default' => $getlocations_defaults['fullscreen_disable']);
+    $options['search_places']            = array('default' => $getlocations_defaults['search_places']);
+    $options['search_places_size']       = array('default' => $getlocations_defaults['search_places_size']);
+    $options['search_places_position']   = array('default' => $getlocations_defaults['search_places_position']);
+    $options['search_places_label']      = array('default' => $getlocations_defaults['search_places_label']);
+    $options['search_places_placeholder'] = array('default' => $getlocations_defaults['search_places_placeholder']);
+    $options['search_places_dd']         = array('default' => $getlocations_defaults['search_places_dd']);
+    $options['search_places_list']       = array('default' => $getlocations_defaults['search_places_list']);
+    // jquery_colorpicker TODO does not work in Views Getlocations | settings
+    $options['jquery_colorpicker_enabled'] = array('default' => 0);
+    #$options['jquery_colorpicker_enabled'] = array('default' => $getlocations_defaults['jquery_colorpicker_enabled']);
 
     // categories
     $options['category_method']               = array('default' => $getlocations_defaults['category_method']);
@@ -427,7 +440,7 @@ class getlocations_plugin_style_map extends views_plugin_style {
 
   function options_validate(&$form, &$form_state) {
 
-    $list = array('Map', 'Satellite', 'Hybrid', 'Physical');
+    $list = array('Map', 'Satellite', 'Hybrid', 'Physical', 'OpenStreetMap');
     $found = FALSE;
     foreach ($list AS $maptype) {
       if (isset($form_state['values']['maptype']) && $form_state['values']['maptype'] == $maptype && $form_state['values']['baselayers'][$maptype] ) {

@@ -41,6 +41,7 @@ function getlocations_search_settings_form() {
   $form = system_settings_form($form);
   unset($form['#theme']);
   $form['#theme'] = 'getlocations_search_settings_form';
+  $form['#validate'][] = 'getlocations_search_settings_validate';
   return $form;
 
 }
@@ -48,6 +49,9 @@ function getlocations_search_settings_form() {
 // form shared between admin config and block config
 function _getlocations_search_settings_form($defaults, $which = 'admin') {
   drupal_add_js(GETLOCATIONS_SEARCH_PATH . '/js/getlocations_search_admin.js');
+
+  $getlocations_defaults = getlocations_defaults();
+  $defaults['jquery_colorpicker_enabled'] = $getlocations_defaults['jquery_colorpicker_enabled'];
 
   $form = array();
   $varname = 'getlocations_search_defaults';
@@ -58,6 +62,9 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
     $title = t('Getlocations Search Block settings');
     $desc = t('The settings here will provide the defaults for Getlocations Search Block.');
   }
+
+  // pass on to theme
+  $form['varname'] = array('#type' => 'value', '#value' => $varname);
 
   $form[$varname] = array(
     '#type' => 'fieldset',
@@ -137,9 +144,102 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
     t('The distance away from the center to search for locations.')
   );
 
+  //     'search_distance_type' => 'mbr',
+  $form[$varname]['search_distance_type'] = getlocations_element_dd(
+    t('Proximity Search type'),
+    $defaults['search_distance_type'],
+    array('mbr' => t('Rectangular'), 'dist' => t('Circular')),
+    t('"Rectangular" is faster, "Circular" is more accurate.')
+  );
+
   $form[$varname]['search_units'] = getlocations_element_distance_unit(
     $defaults['search_units']
   );
+
+  // search area shape
+  $form[$varname]['search_radshape_enable'] = getlocations_element_map_checkbox(
+    t('Enable Show search area'),
+    $defaults['search_radshape_enable'],
+    t('Show Search area as a rectangle or circle.')
+  );
+  $form[$varname]['search_radshape_enable']['#suffix'] = '<div id="wrap-getlocations-search-radshape">';
+
+  // jquery_colorpicker
+  if (module_exists('jquery_colorpicker') && $getlocations_defaults['jquery_colorpicker_enabled']) {
+    $form[$varname]['search_radshape_strokecolor'] = array(
+      '#type' => 'jquery_colorpicker',
+      '#title' => t('Search area line color'),
+      '#default_value' => preg_replace("/^#/", '', $defaults['search_radshape_strokecolor']),
+      '#description' => t('Click on the Colorpicker icon to select a color'),
+    );
+  }
+  else {
+    $form[$varname]['search_radshape_strokecolor'] = getlocations_element_map_tf(
+      t('Search area line color'),
+      $defaults['search_radshape_strokecolor'],
+      t('HTML hex, eg #FF0000.'),
+      10,
+      10,
+      TRUE
+    );
+  }
+
+  $form[$varname]['search_radshape_strokeopacity'] = getlocations_element_map_tf(
+    t('Search area line opacity'),
+    $defaults['search_radshape_strokeopacity'],
+    t('Must be between 0 and 1.'),
+    10,
+    10,
+    TRUE
+  );
+  $form[$varname]['search_radshape_strokeweight'] = getlocations_element_map_tf(
+    t('Search area line thickness'),
+    $defaults['search_radshape_strokeweight'],
+    t('Must be an integer.'),
+    10,
+    10,
+    TRUE
+  );
+
+  // jquery_colorpicker
+  if (module_exists('jquery_colorpicker') && $getlocations_defaults['jquery_colorpicker_enabled']) {
+    $form[$varname]['search_radshape_fillcolor'] = array(
+      '#type' => 'jquery_colorpicker',
+      '#title' => t('Search area fill color'),
+      '#default_value' => preg_replace("/^#/", '', $defaults['search_radshape_fillcolor']),
+      '#description' => t('Click on the Colorpicker icon to select a color'),
+    );
+  }
+  else {
+    $form[$varname]['search_radshape_fillcolor'] = getlocations_element_map_tf(
+      t('Search area fill color'),
+      $defaults['search_radshape_fillcolor'],
+      t('HTML hex, eg #FF0000.'),
+      10,
+      10,
+      TRUE
+    );
+  }
+
+  $form[$varname]['search_radshape_fillopacity'] = getlocations_element_map_tf(
+    t('Search area fill opacity'),
+    $defaults['search_radshape_fillopacity'],
+    t('Must be between 0 and 1.'),
+    10,
+    10,
+    TRUE
+  );
+  $form[$varname]['search_radshape_toggle'] = getlocations_element_map_checkbox(
+    t('Enable Search area toggle button'),
+    $defaults['search_radshape_toggle'],
+    t('Show a button to switch visibility on or off.')
+  );
+  $form[$varname]['search_radshape_toggle_active'] = getlocations_element_map_checkbox(
+    t('Initial state of Search area'),
+    $defaults['search_radshape_toggle_active'],
+    t('Set initial visibility on.')
+  );
+  $form[$varname]['search_radshape_toggle_active']['#suffix'] = '</div>';
 
   // are there any modules providing locations?
   if (getlocations_search_do_types()) {
@@ -208,6 +308,11 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
       '#value' => 0,
     );
   }
+  $form[$varname]['display_latlon'] = getlocations_element_map_checkbox(
+    t('Show Latitude/Longitude'),
+    $defaults['display_latlon'],
+    ''
+  );
   $form[$varname]['display_dms'] = getlocations_element_map_checkbox(
     t('Show Latitude/Longitude in Degrees, minutes, seconds'),
     $defaults['display_dms'],
@@ -231,6 +336,17 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
     ''
   );
 
+  $form[$varname]['search_marker_toggle'] = getlocations_element_map_checkbox(
+    t('Enable Search Marker toggle button'),
+    $defaults['search_marker_toggle'],
+    t('Show a button to switch visibility on or off.')
+  );
+  $form[$varname]['search_marker_toggle_active'] = getlocations_element_map_checkbox(
+    t('Initial state of Search Marker'),
+    $defaults['search_marker_toggle_active'],
+    t('Set initial visibility on.')
+  );
+
   $form[$varname] += getlocations_map_display_basics_form($defaults);
 
   $form[$varname] += getlocations_map_display_options_form($defaults, FALSE, TRUE);
@@ -242,6 +358,11 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
     $defaults['markeraction']
   );
 
+  $form[$varname]['zoom_on_single_use'] = getlocations_element_map_checkbox(
+    t('Apply Default Zoom for Single location'),
+    $defaults['zoom_on_single_use'],
+    t('Apply a Default zoom level for a single marker.')
+  );
   $form[$varname]['nodezoom'] = getlocations_element_map_zoom(
     t('Default Zoom for Single location'),
     $defaults['nodezoom'],
@@ -297,3 +418,27 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
   return $form;
 
 }
+
+function getlocations_search_settings_validate($form, &$form_state) {
+  // jquery_colorpicker munge
+  if (isset($form_state['values']['getlocations_search_defaults'])) {
+    if (! preg_match("/^#/", $form_state['values']['getlocations_search_defaults']['search_radshape_strokecolor'])) {
+      $form_state['values']['getlocations_search_defaults']['search_radshape_strokecolor'] = '#' . $form_state['values']['getlocations_search_defaults']['search_radshape_strokecolor'];
+    }
+    if (! preg_match("/^#/", $form_state['values']['getlocations_search_defaults']['search_radshape_fillcolor'])) {
+      $form_state['values']['getlocations_search_defaults']['search_radshape_fillcolor'] = '#' . $form_state['values']['getlocations_search_defaults']['search_radshape_fillcolor'];
+    }
+
+  }
+  elseif (isset($form_state['values']['getlocations_search_block_defaults'])) {
+    if (! preg_match("/^#/", $form_state['values']['getlocations_search_block_defaults']['search_radshape_strokecolor'])) {
+      $form_state['values']['getlocations_search_block_defaults']['search_radshape_strokecolor'] = '#' . $form_state['values']['getlocations_search_block_defaults']['search_radshape_strokecolor'];
+    }
+    if (! preg_match("/^#/", $form_state['values']['getlocations_search_block_defaults']['search_radshape_fillcolor'])) {
+      $form_state['values']['getlocations_search_block_defaults']['search_radshape_fillcolor'] = '#' . $form_state['values']['getlocations_search_block_defaults']['search_radshape_fillcolor'];
+    }
+
+  }
+
+}
+

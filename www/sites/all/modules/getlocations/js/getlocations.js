@@ -66,18 +66,18 @@ var getlocations_settings = {};
 
         var arr = gs.latlons;
         for (var i = 0; i < arr.length; i++) {
-          arr2 = arr[i];
+          var arr2 = arr[i];
           if (arr2.length < 2) {
             return;
           }
-          lat = arr2[0];
-          lon = arr2[1];
-          lid = arr2[2];
-          name = arr2[3];
-          mark = arr2[4];
-          lidkey = arr2[5];
-          customContent = arr2[6];
-          cat = arr2[7];
+          var lat = arr2[0];
+          var lon = arr2[1];
+          var lid = arr2[2];
+          var name = arr2[3];
+          var mark = arr2[4];
+          var lidkey = arr2[5];
+          var customContent = arr2[6];
+          var cat = arr2[7];
 
           if (mark === '') {
             gs.markdone = gs.defaultIcon;
@@ -85,7 +85,7 @@ var getlocations_settings = {};
           else {
             gs.markdone = Drupal.getlocations.getIcon(mark);
           }
-          m = Drupal.getlocations.makeMarker(map, gs, lat, lon, lid, name, lidkey, customContent, cat, mkey);
+          var m = Drupal.getlocations.makeMarker(map, gs, lat, lon, lid, name, lidkey, customContent, cat, mkey);
           // still experimental
           getlocations_markers[mkey].lids[lid] = m;
           if (gs.usemarkermanager || gs.useclustermanager) {
@@ -105,9 +105,27 @@ var getlocations_settings = {};
       function updateCopyrights() {
         if(getlocations_map[key].getMapTypeId() == "OSM") {
           copyrightNode.innerHTML = "OSM map data @<a target=\"_blank\" href=\"http://www.openstreetmap.org/\"> OpenStreetMap</a>-contributors,<a target=\"_blank\" href=\"http://creativecommons.org/licenses/by-sa/2.0/legalcode\"> CC BY-SA</a>";
+          if (settings.trafficinfo) {
+            $("#getlocations_toggleTraffic_" + key).attr('disabled', true);
+          }
+          if (settings.bicycleinfo) {
+            $("#getlocations_toggleBicycle_" + key).attr('disabled', true);
+          }
+          if (settings.transitinfo) {
+            $("#getlocations_toggleTransit_" + key).attr('disabled', true);
+          }
         }
         else {
           copyrightNode.innerHTML = "";
+          if (settings.trafficinfo) {
+            $("#getlocations_toggleTraffic_" + key).attr('disabled', false);
+          }
+          if (settings.bicycleinfo) {
+            $("#getlocations_toggleBicycle_" + key).attr('disabled', false);
+          }
+          if (settings.transitinfo) {
+            $("#getlocations_toggleTransit_" + key).attr('disabled', false);
+          }
         }
       }
 
@@ -117,7 +135,7 @@ var getlocations_settings = {};
       if ( $("#getlocations_map_canvas_" + key).is('div') ) {
 
         // defaults
-        global_settings = {
+        var global_settings = {
           maxzoom: 16,
           minzoom: 7,
           nodezoom: 12,
@@ -164,12 +182,13 @@ var getlocations_settings = {};
         var map_styles = settings.styles;
         var map_backgroundcolor = settings.map_backgroundcolor;
         var fullscreen = (settings.fullscreen ? true : false);
+        if (settings.is_mobile && settings.fullscreen_disable) {
+          fullscreen = false;
+        }
         var js_path = settings.js_path;
         var useOpenStreetMap = false;
-        var kml_url = settings.kml_url;
-        var kml_url_click = (settings.kml_url_click ? true : false);
-        var kml_url_infowindow = (settings.kml_url_infowindow ? true : false);
-        var kml_url_viewport = (settings.kml_url_viewport ? true : false);
+        // Enable the visual refresh
+        google.maps.visualRefresh = (settings.visual_refresh ?  true : false);
 
         global_settings.info_path = settings.info_path;
         global_settings.lidinfo_path = settings.lidinfo_path;
@@ -268,7 +287,7 @@ var getlocations_settings = {};
         var cenlon = '';
 
         if (minmaxes) {
-          mmarr = minmaxes.split(',');
+          var mmarr = minmaxes.split(',');
           minlat = parseFloat(mmarr[0]);
           minlon = parseFloat(mmarr[1]);
           maxlat = parseFloat(mmarr[2]);
@@ -288,12 +307,13 @@ var getlocations_settings = {};
         else { controltype = false; }
 
         // map type
-        maptypes = [];
+        var maptypes = [];
         if (maptype) {
           if (maptype == 'Map' && baselayers.Map) { maptype = google.maps.MapTypeId.ROADMAP; }
             if (maptype == 'Satellite' && baselayers.Satellite) { maptype = google.maps.MapTypeId.SATELLITE; }
             if (maptype == 'Hybrid' && baselayers.Hybrid) { maptype = google.maps.MapTypeId.HYBRID; }
             if (maptype == 'Physical' && baselayers.Physical) { maptype = google.maps.MapTypeId.TERRAIN; }
+            if (maptype == 'OpenStreetMap' && baselayers.OpenStreetMap) { maptype = "OSM"; }
             if (baselayers.Map) { maptypes.push(google.maps.MapTypeId.ROADMAP); }
             if (baselayers.Satellite) { maptypes.push(google.maps.MapTypeId.SATELLITE); }
             if (baselayers.Hybrid) { maptypes.push(google.maps.MapTypeId.HYBRID); }
@@ -377,6 +397,9 @@ var getlocations_settings = {};
             maxZoom: 18
           }));
           google.maps.event.addListener(getlocations_map[key], 'maptypeid_changed', updateCopyrights);
+          if (maptype == "OSM") {
+            updateCopyrights();
+          }
           getlocations_map[key].controls[google.maps.ControlPosition.BOTTOM_RIGHT].push(copyrightNode);
         }
 
@@ -408,14 +431,14 @@ var getlocations_settings = {};
         }
 
         // KML
-        if (kml_url) {
+        if (settings.kml_url) {
           var kmlLayer = {};
           var kmlLayertoggleState = [];
           kmlLayer[key] = new google.maps.KmlLayer({
-            url: kml_url,
-            preserveViewport: kml_url_viewport,
-            clickable: kml_url_click,
-            suppressInfoWindows: kml_url_infowindow
+            url: settings.kml_url,
+            preserveViewport: (settings.kml_url_viewport ? true : false),
+            clickable: (settings.kml_url_click ? true : false),
+            suppressInfoWindows: (settings.kml_url_infowindow ? true : false)
           });
           if (settings.kml_url_button_state > 0) {
             kmlLayer[key].setMap(getlocations_map[key]);
@@ -426,6 +449,7 @@ var getlocations_settings = {};
             kmlLayertoggleState[key] = false;
           }
           $("#getlocations_toggleKmlLayer_" + key).click( function() {
+            var label = '';
             l = (settings.kml_url_button_label ? settings.kml_url_button_label : Drupal.t('Kml Layer'));
             if (kmlLayertoggleState[key]) {
               kmlLayer[key].setMap(null);
@@ -455,6 +479,7 @@ var getlocations_settings = {};
             traffictoggleState[key] = false;
           }
           $("#getlocations_toggleTraffic_" + key).click( function() {
+            var label = '';
             if (traffictoggleState[key]) {
               trafficInfo[key].setMap(null);
               traffictoggleState[key] = false;
@@ -482,6 +507,7 @@ var getlocations_settings = {};
             bicycletoggleState[key] = false;
           }
           $("#getlocations_toggleBicycle_" + key).click( function() {
+            var label = '';
             if (bicycletoggleState[key]) {
               bicycleInfo[key].setMap(null);
               bicycletoggleState[key] = false;
@@ -509,6 +535,7 @@ var getlocations_settings = {};
             transittoggleState[key] = false;
           }
           $("#getlocations_toggleTransit_" + key).click( function() {
+            var label = '';
             if (transittoggleState[key]) {
               transitInfo[key].setMap(null);
               transittoggleState[key] = false;
@@ -536,6 +563,7 @@ var getlocations_settings = {};
             panoramiotoggleState[key] = false;
           }
           $("#getlocations_togglePanoramio_" + key).click( function() {
+            var label = '';
             if (panoramiotoggleState[key]) {
               panoramioLayer[key].setMap(null);
               panoramiotoggleState[key] = false;
@@ -599,6 +627,7 @@ var getlocations_settings = {};
               cloudtoggleState[key] = false;
             }
             $("#getlocations_toggleCloud_" + key).click( function() {
+              var label = '';
               if (cloudtoggleState[key] == 1) {
                 cloudLayer[key].setMap(null);
                 cloudtoggleState[key] = false;
@@ -613,6 +642,7 @@ var getlocations_settings = {};
             });
           }
           $("#getlocations_toggleWeather_" + key).click( function() {
+            var label = '';
             if (weathertoggleState[key]) {
               weatherLayer[key].setMap(null);
               weathertoggleState[key] = false;
@@ -631,7 +661,7 @@ var getlocations_settings = {};
         getlocations_settings[key] = global_settings;
 
         // markers and bounding
-        if (! settings.inputmap && ! settings.searchmap) {
+        if (! settings.inputmap && ! settings.extcontrol) {
           //setTimeout(function() { doAllMarkers(getlocations_map[key], global_settings, key) }, 300);
           doAllMarkers(getlocations_map[key], global_settings, key);
 
@@ -665,6 +695,11 @@ var getlocations_settings = {};
           var fs = new FullScreenControl(fsdoc);
           fsdoc.index = 0;
           getlocations_map[key].controls[google.maps.ControlPosition.TOP_RIGHT].setAt(0, fsdoc);
+        }
+
+        // search_places
+        if (settings.search_places) {
+          Drupal.getlocations_search_places(key);
         }
 
       }
@@ -713,7 +748,7 @@ var getlocations_settings = {};
     }
 
     // relocate function
-    get_winlocation = function(gs, lid, lidkey) {
+    var get_winlocation = function(gs, lid, lidkey) {
       if (gs.preload_data) {
         arr = gs.getlocations_info;
         for (var i = 0; i < arr.length; i++) {

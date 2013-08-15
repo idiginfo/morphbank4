@@ -6,9 +6,9 @@ dependencies[] = uuid
 dependencies[] = entity
 package = Features
 
-; Information added by drupal.org packaging script on 2013-06-12
-version = "7.x-1.0-alpha3+7-dev"
+; Information added by drupal.org packaging script on 2013-06-27
+version = "7.x-1.0-alpha3+8-dev"
 core = "7.x"
 project = "uuid_features"
-datestamp = "1371055381"
+datestamp = "1372298329"
 
