@@ -47,10 +47,6 @@ $full2 = !empty($fields['standard_image']) ? $standard_image_jpeg : $default_img
         <a href="mailto:<?php print $fields['mail_1']; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
       </li>
       <li>
-        <span class="list-label">Group:</span>
-        <?php print $fields['og_group_ref']; ?>
-      </li>
-      <li>
         <span class="list-label">Continent/Ocean: </span>
         <?php print $fields['continent_ocean']; ?>
       </li>
@@ -64,10 +60,6 @@ $full2 = !empty($fields['standard_image']) ? $standard_image_jpeg : $default_img
       </li>
     </ul>
     <ul class="two-col-tab-right">
-      <li>
-        <span class="list-label">Public/Private: </span>
-        <?php print $fields['group_content_access']; ?>
-      </li>
       <li>
         <span class="list-label">Date Submitted:</span>
         <?php print $fields['created']; ?>

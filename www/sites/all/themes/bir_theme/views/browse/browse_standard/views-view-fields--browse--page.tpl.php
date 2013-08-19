@@ -42,35 +42,6 @@ $full4 = !empty($fields['standard_image']->content) ? $standard_image_jpg : $no_
 
 $edit_url = "/node/{$fields['nid']->content}";
 
-/**
- * See bir_check_browse_access()
- * Check if user has premissions to view node data in browse.
- */
-/*
-$permission = bir_check_browse_access($fields['og_group_ref_1']->content, $fields['group_content_access']->content, $fields['type']->content);
-
-if ($permission) {
-  switch ($fields['type']->content) {
-    case "bir_image":
-      include("views_template_browse_image.php");
-      break;
-    case "bir_specimen":
-      include("views_template_browse_specimen.php");
-      break;
-    case "bir_view":
-      include("views_template_browse_view.php");
-      break;
-    case "bir_locality":
-      include("views_template_browse_locality.php");
-      break;
-    case "bir_album":
-      include("views_template_browse_album.php");
-      break;
-    default:
-      echo "No template for " . $fields['type']->content;
-  }
-}
-*/
 switch ($fields['type']->content) {
     case "bir_image":
       include("views_template_browse_image.php");
@@ -90,4 +61,3 @@ switch ($fields['type']->content) {
     default:
       echo "No template for " . $fields['type']->content;
   }
-?>

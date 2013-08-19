@@ -143,7 +143,6 @@ if (isset($_GET["format"]) && $_GET["format"] == "simple") {
             <ul class="sf sf-js-enabled">
               <li class="nav-mymanager"><a href="/my-manager"><span>My Manager</span></a></li>
               <li class="nav-myalbums"><a href="/my-albums"><span>My Albums</span></a></li>
-              <li class="nav-mygroups"><a href="/my-groups"><span>My Groups</span></a></li>
             </ul>
           </div>
           <!-- Morphbank custom header -->

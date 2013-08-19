@@ -23,7 +23,6 @@ dependencies[] = globalredirect
 dependencies[] = jquery_update
 dependencies[] = libraries
 dependencies[] = media_gallery
-dependencies[] = og
 dependencies[] = panels
 dependencies[] = pathauto
 dependencies[] = profile2

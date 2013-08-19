@@ -45,8 +45,6 @@ foreach ($field_array as $fields) {
 <strong><a href="<?php print $path; ?>"><?php print $fields['title']; ?></strong></a>
 &nbsp;-&nbsp; <a href="<?php print $edit ?>">Edit</a>
 <br /><font size="-2">
-<strong>Group</strong> <?php print $fields['og_group_ref']; ?>
-&nbsp;&nbsp;
 <strong>Contributor</strong>: 
   <a href="/profile/<?php print $fields['contributor']; ?>">
   <?php print $fields['field_first_name_1']; ?>&nbsp;<?php print $fields['field_last_name_1']; ?>

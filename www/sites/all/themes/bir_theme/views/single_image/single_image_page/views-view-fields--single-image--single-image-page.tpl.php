@@ -29,16 +29,8 @@ $full2 = "/bir-api/node/{$fields['nid']->content}.jpeg";
         &nbsp;
         <a href="mailto:<?php print $fields['mail_1']->content; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
       </li>
-      <li>
-        <span class="list-label">Group:</span>
-        <?php print $fields['og_group_ref']->content; ?>
-      </li>
     </ul>
     <ul class="two-col-tab-right">
-      <li>
-        <span class="list-label">Public/Private: </span>
-          <?php print $fields['group_content_access']->content; ?>
-      </li>
       <li>
         <span class="list-label">Date Submitted:</span>
         <?php print $fields['created']->content; ?>
