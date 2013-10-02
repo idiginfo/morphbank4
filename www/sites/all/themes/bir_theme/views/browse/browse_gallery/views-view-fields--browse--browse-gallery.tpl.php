@@ -59,6 +59,6 @@ switch ($fields['type']->content) {
 <a class="float-right" href="<?php print $edit_path; ?>"><?php print $edit_img; ?>Edit</a>
 <br />
 <input type="checkbox" name="nid[]" value="<?php echo $fields['nid']->content; ?>" />
-<a href="<?php print $path; ?>"><?php print $fields['title']->content; ?></a>      
+<a href="<?php print $path; ?>"><?php print $fields['title']->content; ?></a>
 </div>
 

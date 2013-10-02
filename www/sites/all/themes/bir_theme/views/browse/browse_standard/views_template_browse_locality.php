@@ -10,12 +10,7 @@
 <strong>Continent/Ocean:</strong> <?php print $fields['continent_ocean']->content; ?>&nbsp;
 <strong>Country:</strong> <?php print $fields['geolocation_country']->content; ?>&nbsp;&nbsp;
 <strong>State/Province/County:</strong> <?php print $fields['geolocation_province']->content; ?><br />
-<strong>Contributor</strong>: 
-  <a href="/profile/<?php print $fields['contributor']->content; ?>">
-  <?php print $fields['field_first_name_1']->content; ?>&nbsp;<?php print $fields['field_last_name_1']->content; ?>
-  </a>
-  &nbsp;-&nbsp;
-<strong>Submitted By</strong>: 
+<strong>Submitted By</strong>:
   <a href="/profile/<?php print $fields['author']->content; ?>">
   <?php print $fields['field_first_name']->content; ?>&nbsp;<?php print $fields['field_last_name']->content; ?>
   </a>

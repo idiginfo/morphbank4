@@ -11,22 +11,17 @@
 <strong>Specimen part</strong>: <?php print $fields['specimen_part']->content; ?><br />
 <strong>Sex</strong>: <?php print $fields['sex']->content; ?><br />
 <strong>Form</strong>: <?php print $fields['form']->content; ?><br />
-<strong>Contributor</strong>: 
-  <a href="/profile/<?php print $fields['contributor']->content; ?>">
-  <?php print $fields['field_first_name_1']->content; ?>&nbsp;<?php print $fields['field_last_name_1']->content; ?>
-  </a>
-  &nbsp;-&nbsp;
-<strong>Submitted By</strong>: 
+<strong>Submitted By</strong>:
   <a href="/profile/<?php print $fields['author']->content; ?>">
   <?php print $fields['field_first_name']->content; ?>&nbsp;<?php print $fields['field_last_name']->content; ?>
   </a>
 <br />
 <strong>Date created</strong>: <?php print $fields['created']->content; ?><br />
 <strong>No. Images:</strong> <?php print $fields['image_count']->content; ?>
-<?php if ($fields['image_count']->content > 0) { ?>  
+<?php if ($fields['image_count']->content > 0) { ?>
 - <a href="view-images/<?php print $fields['nid']->content; ?>?format=simple" rel="shadowbox;height=768;width=1024;">View Images</a>
 <?php } ?>
-</font> 
+</font>
 </font>
 <td></td>
 </td>

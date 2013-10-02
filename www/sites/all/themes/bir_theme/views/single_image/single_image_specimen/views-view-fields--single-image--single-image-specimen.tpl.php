@@ -40,7 +40,7 @@
     </li>
   </ul>
   <div class="clearfix"></div>
-  
+
   <h4>Names & Determinations</h4>
   <ul class="three-col-tab">
     <li>
@@ -76,7 +76,7 @@
       <span class="list-label">Determination: </span><a href="#"><img src="<?php print base_path() . path_to_theme() . '/' ?>images/comment.png" alt="Annoate" border="0"/></a>
       <br />
       <?php
-      $taxon_array = unserialize($fields['taxon_hierarchy']->content);
+      $taxon_array = !empty($fields['taxon_hierarchy']->content) ? unserialize($fields['taxon_hierarchy']->content) : array();
       $left_list = '';
       $right_list = '';
       if (!empty($taxon_array)) {
@@ -96,8 +96,8 @@
       </ul>
     </li>
   </ul>
-    
-  <h4>Collection information</h4>  
+
+  <h4>Collection information</h4>
   <ul class="two-col-tab-left">
     <li>
       <span class="list-label">Collector name: </span>

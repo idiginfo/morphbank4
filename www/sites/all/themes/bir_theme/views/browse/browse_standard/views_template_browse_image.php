@@ -5,19 +5,15 @@
 <tr>
 <td width="70%">
 <input type="checkbox" name="nid[]" value="<?php echo $fields['nid']->content; ?>" />
-<strong><a href="/image/<?php print $fields['nid']->content; ?>"><?php print $fields['title']->content; ?></a></strong>
+<strong><a href="/image/<?php print $fields['nid']->content; ?>">
+<?php print !empty($fields['title']->content) ? $fields['title']->content : 'View Details'; ?></a></strong>
 &nbsp;-&nbsp; <a href="<?php print $edit_url ?>/edit">Edit</a><br />
 <FONT SIZE="-2">
 <strong>View</strong>: <?php print $fields['view_angle']->content; ?><br />
 <strong>Specimen</strong>: <?php print $fields['specimen_part']->content; ?><br />
 <strong>Scientific_name</strong>: <?php print $fields['scientific_name']->content; ?><br />
 <strong>Technique</strong>: <?php print $fields['imaging_technique']->content; ?><br />
-<strong>Contributor</strong>: 
-  <a href="/profile/<?php print $fields['contributor']->content; ?>">
-  <?php print $fields['field_first_name_1']->content; ?>&nbsp;<?php print $fields['field_last_name_1']->content; ?>
-  </a>
-  &nbsp;-&nbsp;
-<strong>Submitted By</strong>: 
+<strong>Submitted By</strong>:
   <a href="/profile/<?php print $fields['author']->content; ?>">
   <?php print $fields['field_first_name']->content; ?>&nbsp;<?php print $fields['field_last_name']->content; ?>
   </a>

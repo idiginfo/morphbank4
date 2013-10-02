@@ -104,7 +104,7 @@
       // We hide the comments and links now so that we can render them later.
       hide($content['comments']);
       hide($content['links']);
-	  hide($content['node-readmore']);
+	     hide($content['node-readmore']);
       print render($content);
     ?>
   </div>
@@ -112,9 +112,9 @@
   <?php print render($content['links']); ?>
 
   <?php print render($content['comments']); ?>
-  
 
-  
+
+
 
 
 </div><!-- /.node -->

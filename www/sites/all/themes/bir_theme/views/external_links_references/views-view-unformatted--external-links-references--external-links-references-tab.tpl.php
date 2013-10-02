@@ -29,6 +29,8 @@
 <div class="single-node">
   <?php
   $fields = $view->style_plugin->rendered_fields;
+  $external_links = "";
+  $external_references = "";
   foreach ($fields as $field) {
     while (list($key, $val) = each($field)) {
       list(,$type,) = explode('_', $key);
@@ -62,7 +64,7 @@
         <th>Id</th>
         <th>Description</th>
       </tr>
-      <?php print $external_refences; ?>
+      <?php print $external_references; ?>
     </tbody>
   </table>
 </div>

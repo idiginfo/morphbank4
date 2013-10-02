@@ -17,7 +17,7 @@
 <!-- /getlocations-view-map.tpl -->
 <div class="browse-map-table">
 <table class="tb1">
-<?php 
+<?php
 $field_array = $view->style_plugin->rendered_fields;
 foreach ($field_array as $fields) {
   switch($fields['type']) {
@@ -45,12 +45,7 @@ foreach ($field_array as $fields) {
 <strong><a href="<?php print $path; ?>"><?php print $fields['title']; ?></strong></a>
 &nbsp;-&nbsp; <a href="<?php print $edit ?>">Edit</a>
 <br /><font size="-2">
-<strong>Contributor</strong>: 
-  <a href="/profile/<?php print $fields['contributor']; ?>">
-  <?php print $fields['field_first_name_1']; ?>&nbsp;<?php print $fields['field_last_name_1']; ?>
-  </a>
-  &nbsp;-&nbsp;
-<strong>Submitted By</strong>: 
+<strong>Submitted By</strong>:
   <a href="/profile/<?php print $fields['author']; ?>">
   <?php print $fields['field_first_name']; ?>&nbsp;<?php print $fields['field_last_name']; ?>
   </a>

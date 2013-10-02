@@ -59,16 +59,6 @@ $full2 = !empty($fields['standard_image']->content) ? $standard_image_jpeg : $de
         <?php endif; ?>
       </li>
       <li>
-        <span class="list-label">Contributer: </span>
-        <?php if ($fields['name_2']->content != 'Anonymous' && !empty($fields['name_2']->content)): ?>
-        <a href="/profile/<?php print $fields['name_2']->content; ?>">
-          <?php print $fields['field_first_name_2']->content; ?>&nbsp;<?php print $fields['field_last_name_2']->content; ?>
-        </a>
-        &nbsp;
-        <a href="mailto:<?php print $fields['mail_2']->content; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
-        <?php endif; ?>
-      </li>
-      <li>
         <span class="list-label">Date Submitted: </span>
         <?php print $fields['created_1']->content; ?>
       </li>
@@ -89,7 +79,7 @@ $full2 = !empty($fields['standard_image']->content) ? $standard_image_jpeg : $de
         <?php
           $CCval = $fields['creative_commons']->content;
           echo html_entity_decode($CCval, ENT_COMPAT, 'ISO-8859-1');
-        ?>  
+        ?>
       </li>
       <li>
         <span class="list-label">Download: </span>

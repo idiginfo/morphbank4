@@ -25,14 +25,6 @@ $full2 = !empty($fields['standard_image']->content) ? $standard_image_jpeg : $de
         &nbsp;
         <a href="mailto:<?php print $fields['mail']->content; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
       </li>
-      <li>
-        <span class="list-label">Contributor:</span>
-        <a href="/profile/<?php print $fields['contributor']->content; ?>">
-          <?php print $fields['field_first_name_2']->content; ?>&nbsp;<?php print $fields['field_last_name_2']->content; ?>
-        </a>
-        &nbsp;
-        <a href="mailto:<?php print $fields['mail_2']->content; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
-      </li>
     </ul>
     <ul class="two-col-tab-right">
       <li>
@@ -202,16 +194,6 @@ $full2 = !empty($fields['standard_image']->content) ? $standard_image_jpeg : $de
         <?php endif; ?>
       </li>
       <li>
-        <span class="list-label">Contributer: </span>
-        <?php if ($fields['name_1']->content != 'Anonymous' && !empty($fields['name_1']->content)): ?>
-        <a href="/profile/<?php print $fields['name_1']->content; ?>">
-          <?php print $fields['field_first_name_1']->content; ?>&nbsp;<?php print $fields['field_last_name_1']->content; ?>
-        </a>
-        &nbsp;
-        <a href="mailto:<?php print $fields['mail_1']->content; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
-        <?php endif; ?>
-      </li>
-      <li>
         <span class="list-label">Date Submitted: </span>
         <?php print $fields['created']->content; ?>
       </li>
@@ -232,7 +214,7 @@ $full2 = !empty($fields['standard_image']->content) ? $standard_image_jpeg : $de
         <?php
           $CCval = $fields['creative_commons']->content;
           echo html_entity_decode($CCval, ENT_COMPAT, 'ISO-8859-1');
-        ?>  
+        ?>
       </li>
       <li>
         <span class="list-label">Download: </span>

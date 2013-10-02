@@ -39,14 +39,6 @@ $full2 = !empty($fields['standard_image']) ? $standard_image_jpeg : $default_img
         <a href="mailto:<?php print $fields['mail']; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
       </li>
       <li>
-        <span class="list-label">Contributor:</span>
-        <a href="/profile/<?php print $fields['contributor']; ?>">
-          <?php print $fields['field_first_name_1']; ?>&nbsp;<?php print $fields['field_last_name_1']; ?>
-        </a>
-        &nbsp;
-        <a href="mailto:<?php print $fields['mail_1']; ?>"><img src="<?php print $theme_path . '/' ?>images/email.png" alt="Email" border="0" align="absmiddle"/></a>
-      </li>
-      <li>
         <span class="list-label">Continent/Ocean: </span>
         <?php print $fields['continent_ocean']; ?>
       </li>

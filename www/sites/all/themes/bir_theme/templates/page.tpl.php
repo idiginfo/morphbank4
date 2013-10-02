@@ -97,7 +97,7 @@ if (isset($_GET["format"]) && $_GET["format"] == "simple") {
                   <li><a href="/browse?f[0]=type:bir_album"><span>Albums</span></a></li>
                   <li><a href="/browse-map-all"><span>Map All</span></a></li>
                 </ul>
-              </li> 
+              </li>
               <li class="nav-tools"><a href="#" title="Tools"><span>Tools</span></a>
                 <?php if ($logged_in) { ?>
                   <ul style="display: none; visibility: hidden; ">
@@ -209,7 +209,7 @@ if (isset($_GET["format"]) && $_GET["format"] == "simple") {
       </div></div> <!-- /#main, /#main-wrapper -->
 
     <div id="footer">
-      <div id="footer-nav">    
+      <div id="footer-nav">
         <ul id="menu-footer-legal">
           <li><a href="/terms-use">Terms of Use</a></li>
           <li><a href="/citing-atlas">Citing the Atlas</a></li>
