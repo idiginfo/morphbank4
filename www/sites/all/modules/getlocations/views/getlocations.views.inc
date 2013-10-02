@@ -93,8 +93,8 @@ function template_preprocess_getlocations_view_map(&$variables) {
         if ($entity_type == 'node') {
           $marker = $options['node_map_marker'];
           if (isset($location['type']) && isset($location['field_name']) ) {
-            if (isset($options['node_marker__' . $location['type'] . '__' . $location['field_name']])) {
-              $marker = $options['node_marker__' . $location['type'] . '__' . $location['field_name']];
+            if (isset($options['node_marker__' . strtolower($location['type']) . '__' . $location['field_name']])) {
+              $marker = $options['node_marker__' . strtolower($location['type']) . '__' . $location['field_name']];
             }
           }
           // term marker
@@ -187,16 +187,8 @@ function template_preprocess_getlocations_view_map(&$variables) {
   }
 
   // get the defaults and override with the style plugin options
-  $newdefaults = array();
   $getlocations_defaults = getlocations_defaults();
-  foreach ($getlocations_defaults AS $k => $v) {
-    if (isset($options[$k])) {
-      $newdefaults[$k] = $options[$k];
-    }
-    else {
-      $newdefaults[$k] = $getlocations_defaults[$k];
-    }
-  }
+  $newdefaults = getlocations_adjust_vars($getlocations_defaults, $options);
 
   $mapid = getlocations_setup_map($newdefaults);
   getlocations_js_settings_do($newdefaults, $latlons, $minmaxes, $mapid);

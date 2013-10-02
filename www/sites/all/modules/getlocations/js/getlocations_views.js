@@ -259,6 +259,57 @@
         }
       });
 
+      // geojson
+      if ($("#edit-fields-field-address-settings-edit-form-settings-geojson-enable, #edit-style-options-geojson-enable").attr('checked')) {
+        $("#wrap-getlocations-geojson-enable").show();
+      }
+      else {
+        $("#wrap-getlocations-geojson-enable").hide();
+      }
+      $("#edit-fields-field-address-settings-edit-form-settings-geojson-enable, #edit-style-options-geojson-enable").change(function() {
+        if ($(this).attr('checked')) {
+          $("#wrap-getlocations-geojson-enable").show();
+        }
+        else {
+          $("#wrap-getlocations-geojson-enable").hide();
+        }
+      });
+
+      // markermangers
+      if ( $("#edit-style-options-usemarkermanager").is('input')) {
+        if ($("#edit-style-options-usemarkermanager").attr('checked')) {
+          $("#wrap-usemarkermanager").show();
+        }
+        else {
+          $("#wrap-usemarkermanager").hide();
+        }
+        $("#edit-style-options-usemarkermanager").change(function() {
+          if ($(this).attr('checked')) {
+            $("#wrap-usemarkermanager").show();
+          }
+          else {
+            $("#wrap-usemarkermanager").hide();
+          }
+        });
+      }
+
+      if ( $("#edit-style-options-useclustermanager").is('input')) {
+        if ($("#edit-style-options-useclustermanager").attr('checked')) {
+          $("#wrap-useclustermanager").show();
+        }
+        else {
+          $("#wrap-useclustermanager").hide();
+        }
+        $("#edit-style-options-useclustermanager").change(function() {
+          if ($(this).attr('checked')) {
+            $("#wrap-useclustermanager").show();
+          }
+          else {
+            $("#wrap-useclustermanager").hide();
+          }
+        });
+      }
+
 
     }
   };

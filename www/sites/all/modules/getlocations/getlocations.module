@@ -35,17 +35,6 @@ function getlocations_init() {
     drupal_add_js(GETLOCATIONS_PATH . '/js/getlocations_colorbox.js');
   }
 
-  $getlocations_defaults = getlocations_defaults();
-  if ($getlocations_defaults['markermanagertype'] == 2) {
-    if (file_exists(GETLOCATIONS_PATH . '/getlocations.markercluster_override.inc')) {
-      module_load_include('inc', 'getlocations', 'getlocations.markercluster_override');
-    }
-    else {
-      module_load_include('inc', 'getlocations', 'getlocations.markercluster');
-    }
-    $markerclusterer_styles = getlocations_get_markerclusterer_styles();
-    drupal_add_js(array('getlocations_markerclusterer' => $markerclusterer_styles), 'setting');
-  }
 }
 
 /**
@@ -68,7 +57,9 @@ function getlocations_permission() {
  * Implements hook_flush_caches().
  */
 function getlocations_flush_caches() {
-  getlocations_regenerate_markers();
+  if (variable_get('getlocations_flush', 1)) {
+    getlocations_regenerate_markers();
+  }
 }
 
 /**
@@ -727,12 +718,21 @@ function getlocations_nids($nidlist) {
 
 /**
  * Set up javascript settings and map
+ *
+ * @param array $latlons
+ * @param array $minmaxes
+ * @param string $type
+ * @param object $node
+ * @param string $width
+ * @param string $height
+ *
+ * @return string themed map html
  */
 function getlocations_setlocations($latlons, $minmaxes='', $type='node', $node = '', $width='', $height='') {
   if (! getlocations_defaults_check()) {
     return t('You need to !c first.', array('!c' => l('Configure Getlocations', 'admin/config/services/getlocations')));
   }
-  global $language;
+
   $getlocations_defaults = getlocations_defaults();
   $mapid = getlocations_setup_map($getlocations_defaults);
   getlocations_js_settings_do($getlocations_defaults, $latlons, $minmaxes, $mapid);
@@ -751,7 +751,7 @@ function getlocations_setlocations($latlons, $minmaxes='', $type='node', $node =
 /**
  * Function to setup the map scripts
  *
- * @param $defaults
+ * @param array $defaults
  *   Required. the current settings.
  * Sets up the call to googlemaps, css and the relevant getlocations js in html head
  */
@@ -767,7 +767,7 @@ function getlocations_setup_map($defaults) {
 /**
  * Function to setup the map scripts
  *
- * @param $defaults
+ * @param array $defaults
  *   Required. the current settings.
  * Sets up the call to googlemaps, css and the relevant getlocations js in html head
  */
@@ -799,19 +799,35 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
 
   $libraries = array();
   if ($defaults['panoramio_use']) {
-    $libraries[] = 'panoramio';
+    $libraries['panoramio'] = 'panoramio';
   }
   if ($defaults['places'] || module_exists('getlocations_search')) {
-    $libraries[] = 'places';
+    $libraries['places'] = 'places';
   }
   // not active yet
   if ($defaults['geometry']) {
-    $libraries[] = 'geometry';
+    $libraries['geometry'] = 'geometry';
   }
   if ($defaults['weather_use']) {
-    $libraries[] = 'weather';
+    $libraries['weather'] = 'weather';
   }
   // more libraries here
+
+  // compat with getdirections
+  if ($defaults['getdirections_enabled']) {
+    $getdirections_misc_defaults = getdirections_misc_defaults();
+    if (isset($getdirections_misc_defaults['panoramio_use']) && $getdirections_misc_defaults['panoramio_use']) {
+      $libraries['panoramio'] = 'panoramio';
+    }
+    if (isset($getdirections_misc_defaults['weather_use']) && $getdirections_misc_defaults['weather_use']) {
+      $libraries['weather'] = 'weather';
+    }
+  }
+
+  // check for places library
+  if (getlocations_places_check()) {
+    $libraries['places'] = 'places';
+  }
 
   // load libraries if any
   if (count($libraries)) {
@@ -892,15 +908,33 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
     $js_opts['type'] = 'file';
     drupal_add_js($getlocations_paths['markerclusterer_path'], $js_opts);
     $getlocations_js_weight++;
+
+    if (file_exists(GETLOCATIONS_PATH . '/getlocations.markercluster_override.inc')) {
+      module_load_include('inc', 'getlocations', 'getlocations.markercluster_override');
+    }
+    else {
+      module_load_include('inc', 'getlocations', 'getlocations.markercluster');
+    }
+    $markerclusterer_styles = getlocations_get_markerclusterer_styles();
+    $js_opts = array();
+    $js_opts['type'] = 'setting';
+    drupal_add_js(array('getlocations_markerclusterer' => $markerclusterer_styles), $js_opts);
+
   }
 
   if ($defaults['markeraction'] == 2 && !stristr($current_js, $getlocations_paths['infobubble_path'])) {
     $js_opts = array();
     $js_opts['weight'] = $getlocations_js_weight;
     $js_opts['type'] = 'file';
-
     drupal_add_js($getlocations_paths['infobubble_path'], $js_opts);
     $getlocations_js_weight++;
+
+    $js_opts = array();
+    $js_opts['weight'] = $getlocations_js_weight;
+    $js_opts['type'] = 'file';
+    drupal_add_js($getlocations_paths['infobubble_extended_path'], $js_opts);
+    $getlocations_js_weight++;
+
     if (file_exists($getlocations_paths['infobubble_options_path'])) {
       $js_opts = array();
       $js_opts['weight'] = $getlocations_js_weight;
@@ -994,6 +1028,26 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
     }
   }
 
+  // geojson
+  if ($defaults['geojson_enable'] && $geojson_path = getlocations_get_geojson_path()) {
+    if (!stristr($current_js, $geojson_path)) {
+      $js_opts = array();
+      $js_opts['weight'] = $getlocations_js_weight;
+      $js_opts['type'] = 'file';
+      drupal_add_js($geojson_path, $js_opts);
+      $getlocations_js_weight++;
+    }
+    if ($defaults['geojson_data']) {
+      if (!stristr($current_js, $getlocations_paths['getlocations_geojson_path'])) {
+        $js_opts = array();
+        $js_opts['weight'] = $getlocations_js_weight;
+        $js_opts['type'] = 'file';
+        drupal_add_js($getlocations_paths['getlocations_geojson_path'], $js_opts);
+        $getlocations_js_weight++;
+      }
+    }
+  }
+
 
 }
 
@@ -1003,7 +1057,7 @@ function getlocations_setup_js($defaults, $googleonly = FALSE) {
  * @return
  *   Returns the current settings
  */
-function getlocations_defaults() {
+function getlocations_defaults($reset = FALSE) {
   $defaults = array(
     'api_version'                   => 3,
     'width'                         => '300px',
@@ -1111,6 +1165,8 @@ function getlocations_defaults() {
     'rectangles_coords'             => "",
     'rectangles_clickable'          => 0,
     'rectangles_message'            => "",
+    'rectangles_apply'              => 0,
+    'rectangles_dist'               => 0,
     'circles_enable'                => 0,
     'circles_strokecolor'           => "#FF0000",
     'circles_strokeopacity'         => "0.8",
@@ -1121,6 +1177,7 @@ function getlocations_defaults() {
     'circles_clickable'             => 0,
     'circles_message'               => "",
     'circles_radius'                => 0,
+    'circles_apply'                 => 0,
     'polylines_enable'              => 0,
     'polylines_strokecolor'         => "#FF0000",
     'polylines_strokeopacity'       => "0.8",
@@ -1132,13 +1189,15 @@ function getlocations_defaults() {
     'category_term_reference_field' => '',
     'category_showhide_buttons'     => 0,
     'categories'                    => '',
-    'kml_url'                       => '',
-    'kml_url_click'                 => 1,
-    'kml_url_infowindow'            => 0,
-    'kml_url_viewport'              => 1,
-    'kml_url_button'                => 0,
-    'kml_url_button_label'          => 'Kml Layer',
-    'kml_url_button_state'          => 0,
+    'kml_group' => array(
+      'kml_url'                     => '',
+      'kml_url_click'               => 1,
+      'kml_url_infowindow'          => 0,
+      'kml_url_viewport'            => 1,
+      'kml_url_button'              => 0,
+      'kml_url_button_label'        => 'Kml Layer',
+      'kml_url_button_state'        => 0,
+    ),
     'visual_refresh'                => 0,
     'map_resize'                    => 0,
     'region_bias'                   => variable_get('site_default_country', ''),
@@ -1154,8 +1213,15 @@ function getlocations_defaults() {
     'jquery_colorpicker_enabled'    => (module_exists('jquery_colorpicker') ? 1 : 0),
     'geo_enable'                    => 0,
     'extcontrol'                    => '',
+    'geojson_enable'                => 0,
+    'geojson_data'                  => '',
+    'geojson_options'               => '',
+    'nokeyboard'                    => 0,
+    'nodoubleclickzoom'             => 0,
   );
-
+  if ($reset) {
+    return $defaults;
+  }
   $getlocations_defaults = variable_get('getlocations_default', $defaults);
   $newdefaults = getlocations_adjust_vars($defaults, $getlocations_defaults);
   return $newdefaults;
@@ -1181,7 +1247,7 @@ function getlocations_defaults_check() {
  * @param string $latlon
  *
  * @return
- *   Returns true or false
+ *   Returns normalized string or false
  */
 function getlocations_latlon_check($latlon) {
 
@@ -1203,23 +1269,41 @@ function getlocations_latlon_check($latlon) {
       }
       if (preg_match($latregex, $lat) && preg_match($lonregex, $lon)) {
         // Normalize coordinates.
-        while ($lat > 90) {
-          $lat -= 180;
-        }
-        while ($lat < -90) {
-          $lat += 180;
-        }
-        while ($lon > 180) {
-          $lon -= 360;
-        }
-        while ($lon < -180) {
-          $lon += 360;
-        }
+        $lat = getlocations_normalizelat($lat);
+        $lon = getlocations_normalizelng($lon);
         return "$lat" . "," . "$lon";
       }
     }
   }
   return FALSE;
+}
+
+/**
+ * Function to check wether the google places library should be enabled.
+ *
+ */
+function getlocations_places_check() {
+  $found = FALSE;
+  if (module_exists('getlocations_fields')) {
+    $getlocations_fields_defaults = getlocations_fields_defaults();
+    if (isset($getlocations_fields_defaults['use_address']) && $getlocations_fields_defaults['use_address']) {
+      $found = TRUE;
+    }
+  }
+  $getlocations_defaults = getlocations_defaults();
+  if ($getlocations_defaults['getdirections_enabled']) {
+    $getdirections_defaults = getdirections_defaults();
+    if (isset($getdirections_defaults['advanced_autocomplete']) && $getdirections_defaults['advanced_autocomplete']) {
+      $found = TRUE;
+    }
+  }
+  if (module_exists('getlocations_search')) {
+    $getlocations_search_defaults = getlocations_search_defaults();
+    if (isset($getlocations_search_defaults['method']) && $getlocations_search_defaults['method'] == 'google_ac') {
+      $found = TRUE;
+    }
+  }
+  return $found;
 }
 
 /**
@@ -1518,39 +1602,8 @@ function getlocations_lidinfo() {
  * @return string path
  */
 function getlocations_getlidinfo($lid, $lidkey) {
-
-  $content = FALSE;
-  if ($lid > 0) {
-    if (module_exists('getlocations_fields') || module_exists('location')) {
-      $path = getlocations_get_path_from_lid($lid);
-      if ($path) {
-        $content = $path;
-      }
-    }
-    elseif (module_exists('geofield') || module_exists('geolocation') ) {
-      if ($lidkey == 'nid') {
-        $path = url('node/' . $lid);
-      }
-      elseif ($lidkey == 'vid') {
-        $nid = getlocations_get_nid($lid);
-        $path = url('node/' . $nid);
-      }
-      elseif ($lidkey == 'uid') {
-        $path = url('user/' . $lid);
-      }
-      elseif ($lidkey == 'tid' && module_exists('taxonomy')) {
-        $path = url('taxonomy/term/' . $lid);
-      }
-      elseif ($lidkey == 'cid' && module_exists('comment')) {
-        $path = url('comment/' . $lid);
-      }
-      if ($path) {
-        $content = $path;
-      }
-    }
-  }
+  $content = theme('getlocations_lidinfo', array('lid' => $lid, 'lidkey' => $lidkey));
   return $content;
-
 }
 
 // provides data for marker colorbox
@@ -1584,6 +1637,10 @@ function getlocations_markerinfo() {
       // no shadow
       if ($pos < 1) {
         $adj = 1;
+      }
+      // skip this
+      if ($files[$pos] == 'shadow.png') {
+        continue;
       }
       $data[$iconct]['path'] = $path . $files[$pos];
       $data[$iconct]['machine_name'] = $machine_names[$pos + $adj];
@@ -1644,7 +1701,9 @@ function getlocations_get_icondata($reset = FALSE) {
     module_load_include('inc', 'getlocations', 'getlocations.markerinfo');
     $icons = _getlocations_get_icondata();
   }
-  cache_set('getlocations_icondata', $icons, 'cache');
+  if ($icons) {
+    cache_set('getlocations_icondata', $icons, 'cache');
+  }
   return $icons;
 }
 
@@ -1652,24 +1711,35 @@ function getlocations_get_icondata($reset = FALSE) {
  * Regenerate the markerdata file.
  */
 function getlocations_regenerate_markers() {
-  $contents = '';
+  $icons = getlocations_get_icondata(TRUE);
+  if ($icons) {
+    $contents = '';
 
-  $contents .= "// Getlocations marker image data.\n";
-  $contents .= "Drupal.getlocations.iconpath = " . drupal_json_encode(base_path()) . ";\n";
-  $contents .= "Drupal.getlocations.icondata = " . drupal_json_encode(getlocations_get_icondata(TRUE)) . ";\n";
+    $contents .= "// Getlocations marker image data.\n";
+    $contents .= "Drupal.getlocations.iconpath = " . drupal_json_encode(base_path()) . ";\n";
+    $contents .= "Drupal.getlocations.icondata = " . drupal_json_encode($icons) . ";\n";
 
-  // Create the js/ within the files folder.
-  $jspath = getlocations_get_markerfile(TRUE, FALSE);
-  $jsfile = getlocations_get_markerfile(FALSE, FALSE);
-  if ($jspath && $jsfile && file_prepare_directory($jspath, FILE_CREATE_DIRECTORY) && file_unmanaged_save_data($contents, $jsfile, FILE_EXISTS_REPLACE)) {
-    // Also regenerate the cached marker titles array
-    getlocations_get_marker_titles(TRUE);
+    // Create the js/ within the files folder.
+    $jspath = getlocations_get_markerfile(TRUE, FALSE);
+    $jsfile = getlocations_get_markerfile(FALSE, FALSE);
+    if ($jspath && $jsfile && file_prepare_directory($jspath, FILE_CREATE_DIRECTORY) && file_unmanaged_save_data($contents, $jsfile, FILE_EXISTS_REPLACE)) {
+      // Also regenerate the cached marker titles array
+      getlocations_get_marker_titles(TRUE);
+    }
+    else {
+      // failed
+      drupal_set_message(t('Getlocations is unable to save the marker configuration, so the markers will not work. Please check file system permissions of %filepath!', array('%filepath' => $jsfile)), 'error');
+      watchdog('getlocations', 'Getlocations write error when saving the marker configuration to %filepath.', array('%filepath' => $jsfile), WATCHDOG_ERROR);
+      return FALSE;
+    }
   }
   else {
-    // failed
-    drupal_set_message(t('Getlocations is unable to save the marker configuration, so the markers will not work. Please check file system permissions of %filepath!', array('%filepath' => $jsfile)), 'error');
-    watchdog('getlocations', 'Getlocations write error when saving the marker configuration to %filepath.', array('%filepath' => $jsfile), WATCHDOG_ERROR);
+    // no markers found
+      drupal_set_message(t('No markers found, you need to install some markers, please see the project page for details.'), 'error');
+      watchdog('getlocations', 'No markers found.', array(), WATCHDOG_ERROR);
+      return FALSE;
   }
+  return TRUE;
 }
 
 function getlocations_get_markerfile($dir=FALSE, $check=TRUE) {
@@ -1729,6 +1799,9 @@ function getlocations_getlocations_markerdir() {
  *
  */
 function getlocations_do_minmaxes($ct, $location, $minmaxes) {
+  if ($minmaxes == '') {
+    $minmaxes = array('minlat' => 0, 'minlon' => 0, 'maxlat' => 0, 'maxlon' => 0);
+  }
   if ($ct) {
     // latitudes
     if ($location['latitude'] > $minmaxes['maxlat']) {
@@ -1747,8 +1820,8 @@ function getlocations_do_minmaxes($ct, $location, $minmaxes) {
   }
   else {
     $minmaxes['minlat'] = $location['latitude'];
-    $minmaxes['maxlat'] = $location['latitude'];
     $minmaxes['minlon'] = $location['longitude'];
+    $minmaxes['maxlat'] = $location['latitude'];
     $minmaxes['maxlon'] = $location['longitude'];
   }
   return $minmaxes;
@@ -1790,7 +1863,6 @@ function getlocations_box() {
   elseif ($a1 == 'user' && $a2) {
     $content .= getlocations_usermap($a2);
   }
-
   elseif ($a1 == 'term' && $a2) {
     $content .= getlocations_termmap($a2);
   }
@@ -2182,6 +2254,7 @@ function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $in
       'panoramio_use'             => $defaults['panoramio_use'],
       'panoramio_show'            => $defaults['panoramio_show'],
       'panoramio_state'           => $defaults['panoramio_state'],
+      'weather_use'               => $defaults['weather_use'],
       'poi_show'                  => $defaults['poi_show'],
       'transit_show'              => $defaults['transit_show'],
       'map_marker'                => $defaults['node_map_marker'],
@@ -2213,27 +2286,31 @@ function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $in
       'map_backgroundcolor'       => $defaults['map_backgroundcolor'],
       'show_maplinks'             => $defaults['show_maplinks'],
       'js_path'                   => base_path() . GETLOCATIONS_PATH . '/js/',
+      'images_path'               => base_path() . GETLOCATIONS_PATH . '/images/',
       'info_path'                 => url("getlocations/info"),
       'lidinfo_path'              => url("getlocations/lidinfo"),
       'fullscreen'                => $defaults['fullscreen'],
       'show_bubble_on_one_marker' => $defaults['show_bubble_on_one_marker'],
-      'kml_url'                   => $defaults['kml_url'],
+      'kml_url'                   => $defaults['kml_group']['kml_url'],
       'visual_refresh'            => $defaults['visual_refresh'],
       'fullscreen_disable'        => $defaults['fullscreen_disable'],
       'places'                    => $defaults['places'],
       'search_places'             => $defaults['search_places'],
       'getdirections_enabled'     => $defaults['getdirections_enabled'],
       'is_https'                  => ($is_https ? 1 : 0),
+      'geojson_enable'            => $defaults['geojson_enable'],
+      'nokeyboard'                => $defaults['nokeyboard'],
+      'nodoubleclickzoom'         => $defaults['nodoubleclickzoom'],
     ),
   );
   // only set these if wanted
-  if ($defaults['kml_url']) {
-    $settings[$mapid]['kml_url_click']        = $defaults['kml_url_click'];
-    $settings[$mapid]['kml_url_infowindow']   = $defaults['kml_url_infowindow'];
-    $settings[$mapid]['kml_url_viewport']     = $defaults['kml_url_viewport'];
-    $settings[$mapid]['kml_url_button']       = $defaults['kml_url_button'];
-    $settings[$mapid]['kml_url_button_label'] = $defaults['kml_url_button_label'];
-    $settings[$mapid]['kml_url_button_state'] = $defaults['kml_url_button_state'];
+  if ($defaults['kml_group']['kml_url']) {
+    $settings[$mapid]['kml_url_click']        = $defaults['kml_group']['kml_url_click'];
+    $settings[$mapid]['kml_url_infowindow']   = $defaults['kml_group']['kml_url_infowindow'];
+    $settings[$mapid]['kml_url_viewport']     = $defaults['kml_group']['kml_url_viewport'];
+    $settings[$mapid]['kml_url_button']       = $defaults['kml_group']['kml_url_button'];
+    $settings[$mapid]['kml_url_button_label'] = $defaults['kml_group']['kml_url_button_label'];
+    $settings[$mapid]['kml_url_button_state'] = $defaults['kml_group']['kml_url_button_state'];
   }
   if ($defaults['weather_use']) {
     $settings[$mapid]['weather_show']        = $defaults['weather_show'];
@@ -2253,6 +2330,10 @@ function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $in
     $settings[$mapid]['search_places_placeholder'] = $defaults['search_places_placeholder'];
     $settings[$mapid]['search_places_dd']          = $defaults['search_places_dd'];
     $settings[$mapid]['search_places_list']        = $defaults['search_places_list'];
+  }
+  if ($defaults['geojson_enable']) {
+    $settings[$mapid]['geojson_data']    = $defaults['geojson_data'];
+    $settings[$mapid]['geojson_options'] = $defaults['geojson_options'];
   }
 
   // categories
@@ -2304,7 +2385,19 @@ function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $in
     }
   }
   // rectangles
-  if ($defaults['rectangles_enable'] && ! empty($defaults['rectangles_coords'])) {
+  if ($defaults['rectangles_enable'] && (! empty($defaults['rectangles_coords']) || ($defaults['rectangles_apply'] && $defaults['rectangles_dist']))) {
+    if ($defaults['rectangles_apply'] && $defaults['rectangles_dist']) {
+      // get latlons and set coords
+      $tmp = '';
+      foreach ($latlons AS $ll) {
+        $lats = getlocations_earth_latitude_range($ll[0], $ll[1], $defaults['rectangles_dist']);
+        $lngs = getlocations_earth_longitude_range($ll[0], $ll[1], $defaults['rectangles_dist']);
+        $tmp .= $lats[0] . ',' . $lngs[0] . '|' . $lats[1] . ',' . $lngs[1] . "\n";
+      }
+      if ($tmp) {
+        $defaults['rectangles_coords'] = $tmp;
+      }
+    }
     $rectangles = getlocations_get_rectangle_settings($defaults);
     if ($rectangles) {
       $rectangle_settings = array(
@@ -2314,7 +2407,17 @@ function getlocations_js_settings_do($defaults, $latlons, $minmaxes, $mapid, $in
     }
   }
   // circles
-  if ($defaults['circles_enable'] && ! empty($defaults['circles_coords']) && $defaults['circles_radius'] > 0) {
+  if ($defaults['circles_enable'] && $defaults['circles_radius'] > 0 && (! empty($defaults['circles_coords']) || $defaults['circles_apply'])) {
+    if ($defaults['circles_apply'] && count($latlons)) {
+      // get latlons and set coords
+      $tmp = '';
+      foreach ($latlons AS $ll) {
+        $tmp .= $ll[0] . ',' . $ll[1] . "\n";
+      }
+      if ($tmp) {
+        $defaults['circles_coords'] = $tmp;
+      }
+    }
     $circles = getlocations_get_circle_settings($defaults);
     if ($circles) {
       $circle_settings = array(
@@ -2848,7 +2951,7 @@ function getlocations_element_map_pansetting($default) {
     '#title' => t('Automatic Panning'),
     '#default_value' => $default,
     '#options' => array(0 => t('None'), 1 => t('Pan'), 2 => t('Pan and zoom'), 3 => t('Set Center')),
-    '#description' => t('"None" is No panning,<br />"Pan" keeps the markers in the Viewport,<br />"Pan and zoom" fits the markers to the Viewport,<br /> "Set Center" places the markers in the middle of the map.'),
+    '#description' => t("'None' is No panning,") . '<br />' . t("'Pan' keeps the markers in the Viewport,") . '<br />' . t("'Pan and zoom' fits the markers to the Viewport,") . '<br />' . t("'Set Center' places the markers in the middle of the map."),
   );
   return $element;
 }
@@ -2873,7 +2976,7 @@ function getlocations_element_map_markeraction($default) {
       1 => t('InfoWindow'),
       2 => t('InfoBubble'),
       3 => t('Link')),
-    '#description' => t('"None" is No action,<br />"InfoWindow" show information in a Google InfoWindow,<br />"InfoBubble" use InfoBubble instead,<br /> "Link" go to a page.'),
+    '#description' => t("'None' is No action,") . '<br />' . t("'InfoWindow' show information in a Google InfoWindow,") . '<br />' . t("'InfoBubble' use InfoBubble instead,") . '<br />' . t("'Link' go to a page."),
   );
   return $element;
 }
@@ -2896,7 +2999,7 @@ function getlocations_element_map_markeractiontype($default) {
     '#options' => array(
       1 => t('Click'),
       2 => t('Mouse over')),
-    '#description' => t('"Click" is clicking on the marker,<br />"Mouse over" is holding the mouse over a marker.'),
+    '#description' => t("'Click' is clicking on the marker,") . '<br />' . t("'Mouse over' is holding the mouse over a marker."),
   );
   return $element;
 }
@@ -3163,7 +3266,7 @@ function getlocations_map_display_basics_form($defaults, $labels = array()) {
  *   Returns
  *
  */
-function getlocations_map_display_options_form($defaults, $config = TRUE, $extras = TRUE) {
+function getlocations_map_display_options_form($defaults, $config = TRUE, $extras = TRUE, $source = '') {
   $form = array();
   $form['controltype'] = getlocations_element_map_zoom_controltype($defaults['controltype']);
   $form['pancontrol'] = getlocations_element_map_checkbox(t('Show Pan control'), $defaults['pancontrol']);
@@ -3215,6 +3318,18 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     $defaults['draggable'],
     t('Enable dragging the map.')
   );
+
+  $form['nokeyboard'] = getlocations_element_map_checkbox(
+    t('Disable keyboard shortcuts'),
+    $defaults['nokeyboard'],
+    t('Enabling this will disable keyboard shortcuts on the map.')
+  );
+  $form['nodoubleclickzoom'] = getlocations_element_map_checkbox(
+    t('Disable Doubleclick zoom'),
+    $defaults['nodoubleclickzoom'],
+    t('Enabling this will disable doubleclick zooming on the map.')
+  );
+
   $form['map_backgroundcolor'] = getlocations_element_map_tf(
     t('Map background color'),
     $defaults['map_backgroundcolor'],
@@ -3222,14 +3337,15 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
     10
   );
 
-  // Enable the visual refresh feature
-  $form['visual_refresh'] = getlocations_element_map_checkbox(
-    t('Google Visual Refresh'),
-    $defaults['visual_refresh'],
-    t('Enable the Visual Refresh feature.')
-  );
-
   if ($config) {
+
+    // Enable the visual refresh feature
+    $form['visual_refresh'] = getlocations_element_map_checkbox(
+      t('Google Visual Refresh'),
+      $defaults['visual_refresh'],
+      t('Enable the Visual Refresh feature.')
+    );
+
     $form['region_bias'] = getlocations_element_dd(
       t('Regional bias'),
       $defaults['region_bias'],
@@ -3366,7 +3482,6 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
         $defaults['weather_state'],
         t('Activate Weather information when map is first displayed.')
       );
-      $form['weather_state']['#suffix'] = '</div>';
 
       $form['weather_temp'] = getlocations_element_dd(
         t('Temperature units'),
@@ -3383,6 +3498,17 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
         $defaults['weather_label'],
         array(0 => ('Auto'),  1 => t('Black'), 2 => t('White'))
       );
+
+      $form['weather_clickable'] = getlocations_element_map_checkbox(
+        t('Enable clicking on maps'),
+        $defaults['weather_clickable']
+      );
+      $form['weather_info'] = getlocations_element_map_checkbox(
+        t('Enable weather InfoWindows'),
+        $defaults['weather_info']
+      );
+      $form['weather_info']['#suffix'] = '</div>';
+
       $form['weather_cloud'] = getlocations_element_map_checkbox(
         t('Enable Cloud Layer'),
         $defaults['weather_cloud'],
@@ -3394,17 +3520,8 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
         $defaults['weather_cloud_state'],
         t('Activate Cloud layer when map is first displayed.')
       );
-      $form['weather_cloud_state']['#suffix'] = '</div>';
+      $form['weather_cloud_state']['#suffix'] = '</div></div>';
 
-      $form['weather_clickable'] = getlocations_element_map_checkbox(
-        t('Enable clicking on maps'),
-        $defaults['weather_clickable']
-      );
-      $form['weather_info'] = getlocations_element_map_checkbox(
-        t('Enable weather InfoWindows'),
-        $defaults['weather_info']
-      );
-      $form['weather_info']['#suffix'] = '</div>';
     }
     elseif ($getlocations_defaults['weather_use']) {
       $form['weather_show'] = getlocations_element_map_checkbox(
@@ -3418,6 +3535,7 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
         $defaults['weather_state'],
         t('Activate Weather information when map is first displayed.')
       );
+      $form['weather_state']['#suffix'] = '</div>';
 
       $form['weather_cloud'] = getlocations_element_map_checkbox(
         t('Enable Cloud Layer'),
@@ -3430,7 +3548,7 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
         $defaults['weather_cloud_state'],
         t('Activate Cloud layer when map is first displayed.')
       );
-      $form['weather_cloud_state']['#suffix'] = '</div></div>';
+      $form['weather_cloud_state']['#suffix'] = '</div>';
 
     }
 
@@ -3621,6 +3739,26 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
       '#description' => t('The content of the popup.'),
     );
 
+    if ($source == 'getlocations_search') {
+      $form['rectangles_apply'] = array('#type' => 'value', '#value' => 0);
+      $form['rectangles_dist'] = array('#type' => 'value', '#value' => 0);
+    }
+    else {
+      $form['rectangles_apply'] = getlocations_element_map_checkbox(
+        t('Apply a rectangle to all locations'),
+        $defaults['rectangles_apply'],
+        t('Draw a rectangle centered on all locations being displayed. These coordinates will be used instead of the ones below.')
+      );
+      $form['rectangles_dist'] = getlocations_element_map_tf(
+        t('Rectangle distance'),
+        $defaults['rectangles_dist'],
+        t("The distance from the center of the rectangle to the edge in meters on the Earth's surface. This will only be used if Apply a rectangle is enabled."),
+        10,
+        10,
+        FALSE
+      );
+    }
+
     $form['rectangles_coords'] = array(
       '#type' => 'textarea',
       '#title' => t('Rectangle Coordinates'),
@@ -3721,6 +3859,17 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
       '#description' => t('The content of the popup.'),
     );
 
+    if ($source == 'getlocations_search') {
+      $form['circles_apply'] = array('#type' => 'value', '#value' => 0);
+    }
+    else {
+      $form['circles_apply'] = getlocations_element_map_checkbox(
+        t('Apply a circle to all locations'),
+        $defaults['circles_apply'],
+        t('Draw a circle centered on all locations being displayed. These coordinates will be used instead of the ones below.')
+      );
+    }
+
     $form['circles_coords'] = array(
       '#type' => 'textarea',
       '#title' => t('Circle Center'),
@@ -3798,41 +3947,69 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
       '#title' => t('Kml file'),
       '#description' => t('Attach a kml file.'),
       '#collapsible' => TRUE,
-      '#collapsed' => (empty($defaults['kml_url']) ? TRUE : FALSE ),
-      '#tree' => FALSE,
+      '#collapsed' => (empty($defaults['kml_group']['kml_url']) ? TRUE : FALSE ),
+      '#tree' => TRUE,
     );
     $form['kml_group']['kml_url'] = getlocations_element_map_tf(
       t('Kml url'),
-      $defaults['kml_url'],
+      $defaults['kml_group']['kml_url'],
       t('A full url to a publicly accessible kml file.')
     );
     $form['kml_group']['kml_url_click'] = getlocations_element_map_checkbox(
       t('Kml layer clickable'),
-      $defaults['kml_url_click']
+      $defaults['kml_group']['kml_url_click']
     );
     $form['kml_group']['kml_url_infowindow'] = getlocations_element_map_checkbox(
       t('Suppress Kml layer InfoWindows'),
-      $defaults['kml_url_infowindow']
+      $defaults['kml_group']['kml_url_infowindow']
     );
     $form['kml_group']['kml_url_viewport'] = getlocations_element_map_checkbox(
       t('Preserve viewport'),
-      $defaults['kml_url_viewport']
+      $defaults['kml_group']['kml_url_viewport']
     );
     $form['kml_group']['kml_url_button'] = getlocations_element_map_checkbox(
       t('Show toggle button'),
-      $defaults['kml_url_button']
+      $defaults['kml_group']['kml_url_button']
     );
     $form['kml_group']['kml_url_button_label'] = getlocations_element_map_tf(
       t('Label for toggle button'),
-      $defaults['kml_url_button_label'],
+      $defaults['kml_group']['kml_url_button_label'],
       '',
       30
     );
     $form['kml_group']['kml_url_button_state'] = getlocations_element_map_checkbox(
       t('Activate Kml layer'),
-      $defaults['kml_url_button_state'],
+      $defaults['kml_group']['kml_url_button_state'],
       t('Activate Kml layer when map is first displayed.')
     );
+
+    // geojson
+    if (getlocations_get_geojson_path()) {
+      $form['geojson_enable'] = getlocations_element_map_checkbox(
+        t('Enable GeoJSON library'),
+        $defaults['geojson_enable'],
+        t('Show GeoJSON data if defined')
+      );
+      $form['geojson_enable']['#suffix'] = '<div id="wrap-getlocations-geojson-enable">';
+      $form['geojson_data'] = array(
+        '#type' => 'textarea',
+        '#title' => t('GeoJSON data'),
+        '#default_value' => $defaults['geojson_data'],
+        '#description' => t('A GeoJSON object. For more information about GeoJSON see !u', array('!u' => l(t('geojson.org'), 'http://www.geojson.org/', array('attributes' => array('target' => '_blank'))))),
+      );
+      $form['geojson_options'] = array(
+        '#type' => 'textarea',
+        '#title' => t('GeoJSON options'),
+        '#default_value' => $defaults['geojson_options'],
+        '#description' => t('A JSON object.'),
+      );
+      $form['geojson_options']['#suffix'] = '</div>';
+    }
+    else {
+      $form['geojson_enable'] = array('#type' => 'value', '#value' => 0);
+      $form['geojson_data'] = array('#type' => 'value', '#value' => '');
+      $form['geojson_options'] = array('#type' => 'value', '#value' => '');
+    }
 
     // search_places
     // enable
@@ -3901,6 +4078,8 @@ function getlocations_map_display_options_form($defaults, $config = TRUE, $extra
       );
     }
 
+
+
   }
 
   return $form;
@@ -3921,6 +4100,7 @@ function getlocations_paths_get($reset = FALSE) {
   $defaults = array(
     'infobubble_path'                 => GETLOCATIONS_PATH . '/js/infobubble.js',
     'infobubble_options_path'         => GETLOCATIONS_PATH . '/js/infobubble_options.js',
+    'infobubble_extended_path'        => GETLOCATIONS_PATH . '/js/infobubble_extended.js',
     'markermanager_path'              => GETLOCATIONS_PATH . '/js/markermanager.js',
     'markerclusterer_path'            => GETLOCATIONS_PATH . '/js/markerclusterer.js',
     'infowindow_options_path'         => GETLOCATIONS_PATH . '/js/infowindow_options.js',
@@ -3933,6 +4113,7 @@ function getlocations_paths_get($reset = FALSE) {
     'getlocations_search_places_path' => GETLOCATIONS_PATH . '/js/getlocations_search_places.js',
     'getlocations_geo_path'           => GETLOCATIONS_PATH . '/js/getlocations_geo.js',
     'getlocations_preview_path'       => GETLOCATIONS_PATH . '/js/getlocations_preview.js',
+    'getlocations_geojson_path'       => GETLOCATIONS_PATH . '/js/getlocations_geojson.js',
   );
   if ($reset) {
     $getlocations_paths = $defaults;
@@ -3961,7 +4142,7 @@ function getlocations_markerpicker_link($id, $cat, $infoimg='') {
       $boxwidth = $getlocations_colorbox['marker_width'];
       $boxheight = $getlocations_colorbox['marker_height'];
       if (empty($infoimg)) {
-        $infoimg = '<img class="getlocations_infoimg" src="' . base_path() . drupal_get_path( 'module', 'getlocations') . '/images/info.png' . '" title="' . t('Click here to select an icon from a colorbox') . '" >';
+        $infoimg = '<img class="getlocations_infoimg" src="' . base_path() . GETLOCATIONS_PATH . '/images/info.png' . '" title="' . t('Click here to select an icon from a colorbox') . '" >';
       }
       $link = l($infoimg, 'getlocations/markerinfo', array(
           'attributes' => array(
@@ -4308,14 +4489,29 @@ function getlocations_get_polyline_settings($defaults) {
   return $polylines;
 }
 
-// run string through check_plain but then restore apostrophes
 /**
- * Function
+ * Function to get the path to the GeoJSON library
  *
  * @param
  *
  * @return
- *   Returns
+ *   Returns string or false
+ *
+ */
+function getlocations_get_geojson_path() {
+  if ($geojsonpath = libraries_get_path('GeoJSON')) {
+    return $geojsonpath . '/GeoJSON.js';
+  }
+  return FALSE;
+}
+
+/**
+ * Function to run string through check_plain but then restore apostrophes
+ *
+ * @param
+ *
+ * @return
+ *   Returns string
  *
  */
 function getlocations_apoclean($string) {
@@ -4956,6 +5152,37 @@ function getlocations_element_search_distance($default, $title = '', $descriptio
 }
 
 /**
+ * Normalizes a latitude to the [-90,90] range. Latitudes above 90 or
+ * below -90 are capped, not wrapped.
+ * @param {Number} lat The latitude to normalize, in degrees.
+ * @type Number
+ * @return Returns the latitude, fit within the [-90,90] range.
+ */
+function getlocations_normalizelat($lat) {
+  return max(-90, min(90, $lat));
+}
+
+/**
+ * Normalizes a longitude to the [-180,180] range. Longitudes above 180
+ * or below -180 are wrapped.
+ * @param {Number} lng The longitude to normalize, in degrees.
+ * @type Number
+ * @return Returns the longitude, fit within the [-180,180] range.
+ */
+function getlocations_normalizelng($lng) {
+  if ($lng % 360 == 180) {
+      return 180;
+    }
+    while ($lng > 180) {
+      $lng -= 360;
+    }
+    while ($lng < -180) {
+      $lng += 360;
+    }
+    return $lng;
+}
+
+/**
  * Function
  *
  * @param
@@ -5181,6 +5408,12 @@ function getlocations_theme() {
     'getlocations_addressfield_convert' => array(
       'variables' => array(
         'address' => array(),
+      ),
+    ),
+    'getlocations_lidinfo' => array(
+      'variables' =>array(
+        'lid' => '',
+        'lidkey' => '',
       ),
     ),
   );
@@ -5422,8 +5655,10 @@ function theme_getlocations_show($variables) {
   if ($defaults['panoramio_use'] && $defaults['panoramio_show']) {
     $buttons[] = '<input type="button" value="' . t('Panoramio !t', array('!t' => ($defaults['panoramio_state'] ? t('Off') : t('On')))) . '" id="getlocations_togglePanoramio_' . $mapid . '" class="form-submit" />';
   }
-  if ($defaults['weather_use'] && $defaults['weather_show']) {
-    $buttons[] = '<input type="button" value="' . t('Weather !t', array('!t' => ($defaults['weather_state'] ? t('Off') : t('On')))) . '" id="getlocations_toggleWeather_' . $mapid . '" class="form-submit" />';
+  if ($defaults['weather_use']) {
+    if ($defaults['weather_show']) {
+      $buttons[] = '<input type="button" value="' . t('Weather !t', array('!t' => ($defaults['weather_state'] ? t('Off') : t('On')))) . '" id="getlocations_toggleWeather_' . $mapid . '" class="form-submit" />';
+    }
     if ($defaults['weather_cloud']) {
       $buttons[] = '<input type="button" value="' . t('Clouds !t', array('!t' => ($defaults['weather_cloud_state'] ? t('Off') : t('On')))) . '" id="getlocations_toggleCloud_' . $mapid . '" class="form-submit" />';
     }
@@ -5439,12 +5674,12 @@ function theme_getlocations_show($variables) {
   }
 
   // KML
-  if ($defaults['kml_url'] && $defaults['kml_url_button']) {
+  if ($defaults['kml_group']['kml_url'] && $defaults['kml_group']['kml_url_button']) {
     $kmlbuttonlabel = t('Kml Layer');
-    if ($defaults['kml_url_button_label']) {
-      $kmlbuttonlabel = $defaults['kml_url_button_label'];
+    if ($defaults['kml_group']['kml_url_button_label']) {
+      $kmlbuttonlabel = $defaults['kml_group']['kml_url_button_label'];
     }
-    $kmlbuttonlabel .= ' ' . ($defaults['kml_url_button_state'] ? t('Off') : t('On'));
+    $kmlbuttonlabel .= ' ' . ($defaults['kml_group']['kml_url_button_state'] ? t('Off') : t('On'));
     $buttons[] = '<input type="button" value="' . $kmlbuttonlabel . '" id="getlocations_toggleKmlLayer_' . $mapid . '" class="form-submit"  />';
   }
 
@@ -5742,8 +5977,10 @@ function theme_getlocations_settings_form($variables) {
         $link = getlocations_markerpicker_link($form['getlocations_default']['comment_map_marker']['#id'], 'c');
         $form['getlocations_default']['comment_map_marker']['#field_suffix'] = '&nbsp;' . $link;
       }
-      $link = getlocations_markerpicker_link($form['getlocations_default']['input_map_marker']['#id'], 'i');
-      $form['getlocations_default']['input_map_marker']['#field_suffix'] = '&nbsp;' . $link;
+      if (module_exists('getlocations_fields')) {
+        $link = getlocations_markerpicker_link($form['getlocations_default']['input_map_marker']['#id'], 'i');
+        $form['getlocations_default']['input_map_marker']['#field_suffix'] = '&nbsp;' . $link;
+      }
 
       if ($types = getlocations_get_types()) {
         foreach ($types AS $type => $name) {
@@ -5838,7 +6075,7 @@ function theme_getlocations_plugin_style_map_options_form($variables) {
           foreach ($types AS $type => $name) {
             $field_names = getlocations_get_fieldname2($type, 'node');
             foreach ($field_names AS $field_name) {
-              $mkey = 'node_marker__' . $type . '__' . $field_name;
+              $mkey = 'node_marker__' . strtolower($type) . '__' . $field_name;
               $link = getlocations_markerpicker_link($form[$mkey]['#id'], 'n');
               $form[$mkey]['#field_suffix'] = '&nbsp;' . $link;
             }
@@ -5976,35 +6213,74 @@ function theme_getlocations_addressfield_convert($variables) {
     }
     $location['name'] = (count($name) ? implode(", ", $name) : '');
 
-    $location['street'] = $address['thoroughfare'];
+    $location['street'] = (isset($address['thoroughfare']) ? $address['thoroughfare'] : '');
     $additional = array();
-    if ($address['premise']) {
+    if (isset($address['premise']) && $address['premise']) {
       $additional[] = $address['premise'];
     }
-    if ($address['sub_premise']) {
+    if (isset($address['sub_premise']) && $address['sub_premise']) {
       $additional[] = $address['sub_premise'];
     }
     $location['additional'] = (count($additional) ? implode(", ", $additional) : '');
     $city = array();
-    if ($address['dependent_locality']) {
+    if (isset($address['dependent_locality']) && $address['dependent_locality']) {
       $city[] = $address['dependent_locality'];
     }
-    if ($address['locality']) {
+    if (isset($address['locality']) && $address['locality']) {
       $city[] = $address['locality'];
     }
     $location['city'] = (count($city) ? implode(", ", $city) : '');
     $admin_area = array();
-    if ($address['sub_administrative_area']) {
+    if (isset($address['sub_administrative_area']) && $address['sub_administrative_area']) {
       $admin_area[] = $address['sub_administrative_area'];
     }
-    if ($address['administrative_area']) {
+    if (isset($address['administrative_area']) && $address['administrative_area']) {
       $admin_area[] = $address['administrative_area'];
     }
     $location['province_name'] = (count($admin_area) ? implode(", ", $admin_area) :'');
-    $location['postal_code'] = drupal_strtoupper($address['postal_code']);
+    $location['postal_code'] = (isset($address['postal_code']) ? drupal_strtoupper($address['postal_code']) : '');
     $location['country_name'] = (isset($address['country_name']) ? $address['country_name'] : $address['country']);
     $location['country'] = $address['country'];
   }
   return $location;
 
 }
+
+function theme_getlocations_lidinfo($variables) {
+  $lid = $variables['lid'];
+  $lidkey = $variables['lidkey'];
+
+  $content = FALSE;
+  if ($lid > 0) {
+    if (module_exists('getlocations_fields') || module_exists('location')) {
+      $path = getlocations_get_path_from_lid($lid);
+      if ($path) {
+        $content = $path;
+      }
+    }
+    elseif (module_exists('geofield') || module_exists('geolocation') ) {
+      if ($lidkey == 'nid') {
+        $path = url('node/' . $lid);
+      }
+      elseif ($lidkey == 'vid') {
+        $nid = getlocations_get_nid($lid);
+        $path = url('node/' . $nid);
+      }
+      elseif ($lidkey == 'uid') {
+        $path = url('user/' . $lid);
+      }
+      elseif ($lidkey == 'tid' && module_exists('taxonomy')) {
+        $path = url('taxonomy/term/' . $lid);
+      }
+      elseif ($lidkey == 'cid' && module_exists('comment')) {
+        $path = url('comment/' . $lid);
+      }
+      if ($path) {
+        $content = $path;
+      }
+    }
+  }
+  return $content;
+
+}
+

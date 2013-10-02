@@ -29,13 +29,18 @@ function getlocations_search_settings_form() {
     // This will store all the defaults in one variable.
     '#tree' => TRUE,
   );
-  $getlocations_search_paths = variable_get('getlocations_search_paths', array('getlocations_search_path' => GETLOCATIONS_SEARCH_PATH . '/js/getlocations_search.js'));
+  $getlocations_search_paths = getlocations_search_paths_get();
   $form['getlocations_search_paths']['getlocations_search_path'] = getlocations_element_path(
     t('Path to getlocations_search javascript file'),
     $getlocations_search_paths['getlocations_search_path'],
     70,
     128,
     t('Where the getlocations_search javascript file is located.')
+  );
+  $form['getlocations_search_paths']['reset'] = getlocations_element_map_checkbox(
+    t('Reset'),
+    0,
+    t('Reset the paths to the defaults.')
   );
 
   $form = system_settings_form($form);
@@ -120,7 +125,7 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
   $form[$varname]['use_geolocation_button'] = getlocations_element_map_checkbox(
     t('Provide Browser based geocoding option'),
     $defaults['use_geolocation_button'],
-    t('Use the browser to find a location. For gps enabled mobile devices.')
+    t('Use the browser to find a location. For gps enabled mobile devices and wireless networks.')
   );
 
   // taxonomy support
@@ -349,7 +354,7 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
 
   $form[$varname] += getlocations_map_display_basics_form($defaults);
 
-  $form[$varname] += getlocations_map_display_options_form($defaults, FALSE, TRUE);
+  $form[$varname] += getlocations_map_display_options_form($defaults, FALSE, TRUE, 'getlocations_search');
 
   $form[$varname]['markeractiontype'] = getlocations_element_map_markeractiontype(
     $defaults['markeractiontype']
@@ -363,11 +368,13 @@ function _getlocations_search_settings_form($defaults, $which = 'admin') {
     $defaults['zoom_on_single_use'],
     t('Apply a Default zoom level for a single marker.')
   );
+  $form[$varname]['zoom_on_single_use']['#suffix'] = '<div id="wrap-zoom-on-single-use">';
   $form[$varname]['nodezoom'] = getlocations_element_map_zoom(
     t('Default Zoom for Single location'),
     $defaults['nodezoom'],
     t('The Default zoom level for a single marker.')
   );
+  $form[$varname]['nodezoom']['#suffix'] = '</div>';
 
   // marker manager
   $form[$varname]['markermanagertype'] = getlocations_element_markermanagertype($defaults['markermanagertype']);
@@ -439,6 +446,10 @@ function getlocations_search_settings_validate($form, &$form_state) {
     }
 
   }
-
+  $reset = $form_state['values']['getlocations_search_paths']['reset'];
+  unset($form_state['values']['getlocations_search_paths']['reset']);
+  if ($reset) {
+    $form_state['values']['getlocations_search_paths'] = getlocations_search_paths_get(TRUE);
+  }
 }
 

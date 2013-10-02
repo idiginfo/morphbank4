@@ -18,17 +18,22 @@
         fillColor: '#FF0000',
         fillOpacity: 0.35
       };
+      var ver = Drupal.getlocations.msiedetect();
+      var pushit = false;
+      if ( (ver == '') || (ver && ver > 8)) {
+        pushit = true;
+      }
 
       $.each(Drupal.settings.getlocations_circles, function (key, settings) {
 
         var strokeColor = (settings.strokeColor ? settings.strokeColor : default_circle_settings.strokeColor);
-        if (! strokeColor.match("/^#/")) {
+        if (typeof strokeColor.match("/^#/") === null) {
           strokeColor = '#' + strokeColor;
         }
         var strokeOpacity = (settings.strokeOpacity ? settings.strokeOpacity : default_circle_settings.strokeOpacity);
         var strokeWeight = (settings.strokeWeight ? settings.strokeWeight : default_circle_settings.strokeWeight);
         var fillColor = (settings.fillColor ? settings.fillColor : default_circle_settings.fillColor);
-        if (! fillColor.match("/^#/")) {
+        if (typeof fillColor.match("/^#/") === null) {
           fillColor = '#' + fillColor;
         }
         var fillOpacity = (settings.fillOpacity ? settings.fillOpacity : default_circle_settings.fillOpacity);
@@ -45,11 +50,12 @@
         var p_clickable = clickable;
         var p_message = message;
         var p_radius = radius;
+        var rc = [];
         for (var i = 0; i < circles.length; i++) {
           rc = circles[i];
           if (rc.coords) {
             if (rc.strokeColor) {
-              if (! rc.strokeColor.match("/^#/")) {
+              if (typeof rc.strokeColor.match("/^#/") === null) {
                 rc.strokeColor = '#' + rc.strokeColor;
               }
               p_strokeColor = rc.strokeColor;
@@ -61,7 +67,7 @@
               p_strokeWeight = rc.strokeWeight;
             }
             if (rc.fillColor) {
-              if (! rc.fillColor.match("/^#/")) {
+              if (typeof rc.fillColor.match("/^#/") === null) {
                 rc.fillColor = '#' + rc.fillColor;
               }
               p_fillColor = rc.fillColor;
@@ -78,12 +84,13 @@
             if (rc.radius) {
               p_radius = rc.radius;
             }
+
             p_clickable = (p_clickable ? true : false);
             p_radius = parseInt(p_radius);
             var mcoords = '';
             var circ = [];
-            ll = rc.coords[0];
-            lla = ll.split(",");
+            var ll = rc.coords[0];
+            var lla = ll.split(",");
             mcoords = new google.maps.LatLng(parseFloat(lla[0]), parseFloat(lla[1]));
             var circOpts = {};
             circOpts.strokeColor = p_strokeColor;
@@ -98,11 +105,41 @@
             circ[i] = new google.maps.Circle(circOpts);
 
             if (p_clickable && p_message) {
-              infowindow = new google.maps.InfoWindow();
               google.maps.event.addListener(circ[i], 'click', function(event) {
-                infowindow.setContent(p_message);
-                infowindow.setPosition(event.latLng);
-                infowindow.open(getlocations_map[key]);
+                // close any previous instances
+                if (pushit) {
+                  for (var i in getlocations_settings[key].infoBubbles) {
+                    getlocations_settings[key].infoBubbles[i].close();
+                  }
+                }
+                if (getlocations_settings[key].markeraction == 2) {
+                  // infobubble
+                  if (typeof(infoBubbleOptions) == 'object') {
+                    var infoBubbleOpts = infoBubbleOptions;
+                  }
+                  else {
+                    var infoBubbleOpts = {};
+                  }
+                  infoBubbleOpts.content = p_message;
+                  infoBubbleOpts.position = event.latLng;
+                  var iw = new InfoBubble(infoBubbleOpts);
+                }
+                else {
+                  // infowindow
+                  if (typeof(infoWindowOptions) == 'object') {
+                    var infoWindowOpts = infoWindowOptions;
+                  }
+                  else {
+                    var infoWindowOpts = {};
+                  }
+                  infoWindowOpts.content = p_message;
+                  infoWindowOpts.position = event.latLng;
+                  var iw = new google.maps.InfoWindow(infoWindowOpts);
+                }
+                iw.open(getlocations_map[key]);
+                if (pushit) {
+                  getlocations_settings[key].infoBubbles.push(iw);
+                }
               });
             }
           }

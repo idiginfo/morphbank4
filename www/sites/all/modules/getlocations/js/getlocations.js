@@ -187,6 +187,8 @@ var getlocations_settings = {};
         }
         var js_path = settings.js_path;
         var useOpenStreetMap = false;
+        var nokeyboard = (settings.nokeyboard ? true : false);
+        var nodoubleclickzoom = (settings.nodoubleclickzoom ? true : false);
         // Enable the visual refresh
         google.maps.visualRefresh = (settings.visual_refresh ?  true : false);
 
@@ -374,7 +376,9 @@ var getlocations_settings = {};
           overviewMapControlOptions: {opened: (overview_opened ? true : false)},
           streetViewControl: (streetview_show ? true : false),
           scaleControl: (scale ? true : false),
-          scaleControlOptions: {style: google.maps.ScaleControlStyle.DEFAULT}
+          scaleControlOptions: {style: google.maps.ScaleControlStyle.DEFAULT},
+          keyboardShortcuts: (nokeyboard ? false : true),
+          disableDoubleClickZoom: nodoubleclickzoom
         };
         if (map_backgroundcolor) {
           mapOpts.backgroundColor = map_backgroundcolor;
@@ -577,43 +581,59 @@ var getlocations_settings = {};
             $(this).val(label);
           });
         }
+
         // Weather Layer
-        if (settings.weather_use && settings.weather_show) {
-          var weatherLayer = {};
-          var weathertoggleState = {};
-          tu = google.maps.weather.TemperatureUnit.CELSIUS;
-          if (settings.weather_temp == 2) {
-            tu = google.maps.weather.TemperatureUnit.FAHRENHEIT;
-          }
-          sp = google.maps.weather.WindSpeedUnit.KILOMETERS_PER_HOUR;
-          if (settings.weather_speed == 2) {
-            sp = google.maps.weather.WindSpeedUnit.METERS_PER_SECOND;
-          }
-          else if (settings.weather_speed == 3) {
-            sp = google.maps.weather.WindSpeedUnit.MILES_PER_HOUR;
-          }
-          var weatherOpts =  {
-            temperatureUnits: tu,
-            windSpeedUnits: sp,
-            clickable: (settings.weather_clickable ? true : false),
-            suppressInfoWindows: (settings.weather_info ? false : true)
-          };
-          if (settings.weather_label > 0) {
-            weatherOpts.labelColor = google.maps.weather.LabelColor.BLACK;
-            if (settings.weather_label == 2) {
-              weatherOpts.labelColor = google.maps.weather.LabelColor.WHITE;
+        if (settings.weather_use) {
+          if (settings.weather_show) {
+            var weatherLayer = {};
+            var weathertoggleState = {};
+            tu = google.maps.weather.TemperatureUnit.CELSIUS;
+            if (settings.weather_temp == 2) {
+              tu = google.maps.weather.TemperatureUnit.FAHRENHEIT;
             }
+            sp = google.maps.weather.WindSpeedUnit.KILOMETERS_PER_HOUR;
+            if (settings.weather_speed == 2) {
+              sp = google.maps.weather.WindSpeedUnit.METERS_PER_SECOND;
+            }
+            else if (settings.weather_speed == 3) {
+              sp = google.maps.weather.WindSpeedUnit.MILES_PER_HOUR;
+            }
+            var weatherOpts =  {
+              temperatureUnits: tu,
+              windSpeedUnits: sp,
+              clickable: (settings.weather_clickable ? true : false),
+              suppressInfoWindows: (settings.weather_info ? false : true)
+            };
+            if (settings.weather_label > 0) {
+              weatherOpts.labelColor = google.maps.weather.LabelColor.BLACK;
+              if (settings.weather_label == 2) {
+                weatherOpts.labelColor = google.maps.weather.LabelColor.WHITE;
+              }
+            }
+            weatherLayer[key] = new google.maps.weather.WeatherLayer(weatherOpts);
+            if (settings.weather_state > 0) {
+              weatherLayer[key].setMap(getlocations_map[key]);
+              weathertoggleState[key] = true;
+            }
+            else {
+              weatherLayer[key].setMap(null);
+              weathertoggleState[key] = false;
+            }
+            $("#getlocations_toggleWeather_" + key).click( function() {
+              var label = '';
+              if (weathertoggleState[key]) {
+                weatherLayer[key].setMap(null);
+                weathertoggleState[key] = false;
+                label = Drupal.t('Weather On');
+              }
+              else {
+                weatherLayer[key].setMap(getlocations_map[key]);
+                weathertoggleState[key] = true;
+                label = Drupal.t('Weather Off');
+              }
+              $(this).val(label);
+            });
           }
-          weatherLayer[key] = new google.maps.weather.WeatherLayer(weatherOpts);
-          if (settings.weather_state > 0) {
-            weatherLayer[key].setMap(getlocations_map[key]);
-            weathertoggleState[key] = true;
-          }
-          else {
-            weatherLayer[key].setMap(null);
-            weathertoggleState[key] = false;
-          }
-          // Cloud Layer
           if (settings.weather_cloud) {
             var cloudLayer = {};
             var cloudtoggleState = [];
@@ -641,20 +661,6 @@ var getlocations_settings = {};
               $(this).val(label);
             });
           }
-          $("#getlocations_toggleWeather_" + key).click( function() {
-            var label = '';
-            if (weathertoggleState[key]) {
-              weatherLayer[key].setMap(null);
-              weathertoggleState[key] = false;
-              label = Drupal.t('Weather On');
-            }
-            else {
-              weatherLayer[key].setMap(getlocations_map[key]);
-              weathertoggleState[key] = true;
-              label = Drupal.t('Weather Off');
-            }
-            $(this).val(label);
-          });
         }
 
         // exporting global_settings to getlocations_settings
@@ -697,9 +703,14 @@ var getlocations_settings = {};
           getlocations_map[key].controls[google.maps.ControlPosition.TOP_RIGHT].setAt(0, fsdoc);
         }
 
-        // search_places
-        if (settings.search_places) {
+        // search_places in getlocations_search_places.js
+        if (settings.search_places && $.isFunction(Drupal.getlocations_search_places)) {
           Drupal.getlocations_search_places(key);
+        }
+
+        //geojson in getlocations_geojson.js
+        if (settings.geojson_enable && settings.geojson_data && $.isFunction(Drupal.getlocations_geojson)) {
+          Drupal.getlocations_geojson(key);
         }
 
       }
@@ -792,7 +803,7 @@ var getlocations_settings = {};
             if(gs.useCustomContent) {
               var cc = [];
               cc.content = customContent;
-              Drupal.getlocations.showPopup(map, m, gs, cc);
+              Drupal.getlocations.showPopup(map, m, gs, cc, mkey);
             }
             else {
               // fetch bubble content
@@ -801,7 +812,7 @@ var getlocations_settings = {};
                 for (var i = 0; i < arr.length; i++) {
                   data = arr[i];
                   if (lid == data.lid && lidkey == data.lidkey && data.content) {
-                    Drupal.getlocations.showPopup(map, m, gs, data);
+                    Drupal.getlocations.showPopup(map, m, gs, data, mkey);
                   }
                 }
               }
@@ -820,7 +831,7 @@ var getlocations_settings = {};
                 }
 
                 $.get(path, qs, function(data) {
-                  Drupal.getlocations.showPopup(map, m, gs, data);
+                  Drupal.getlocations.showPopup(map, m, gs, data, mkey);
                 });
               }
             }
@@ -868,7 +879,7 @@ var getlocations_settings = {};
 
   };
 
-  Drupal.getlocations.showPopup = function(map, m, gs, data) {
+  Drupal.getlocations.showPopup = function(map, m, gs, data, key) {
     var ver = Drupal.getlocations.msiedetect();
     var pushit = false;
     if ( (ver == '') || (ver && ver > 8)) {
@@ -877,8 +888,8 @@ var getlocations_settings = {};
 
     if (pushit) {
       // close any previous instances
-      for (var i in gs.infoBubbles) {
-        gs.infoBubbles[i].close();
+      for (var i in getlocations_settings[key].infoBubbles) {
+        getlocations_settings[key].infoBubbles[i].close();
       }
     }
 
@@ -894,7 +905,7 @@ var getlocations_settings = {};
       infoBubble.open(map, m);
       if (pushit) {
         // add to the array
-        gs.infoBubbles.push(infoBubble);
+        getlocations_settings[key].infoBubbles.push(infoBubble);
       }
     }
     else {
@@ -909,10 +920,9 @@ var getlocations_settings = {};
       infowindow.open(map, m);
       if (pushit) {
         // add to the array
-        gs.infoBubbles.push(infowindow);
+        getlocations_settings[key].infoBubbles.push(infowindow);
       }
     }
-
   };
 
   Drupal.getlocations.doBounds = function(map, minlat, minlon, maxlat, maxlon, dopan) {

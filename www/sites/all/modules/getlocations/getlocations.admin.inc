@@ -45,6 +45,11 @@ function getlocations_settings_form() {
     '#value' => t('Regenerate'),
     '#submit' => array('_getlocations_rebuild_marker_js_submit'),
   );
+  $form['rebuild']['getlocations_flush'] = getlocations_element_map_checkbox(
+    t('Flush marker cache'),
+    variable_get('getlocations_flush', 1),
+    t('Include the marker cache when the Drupal cache is flushed.')
+  );
 
   // google api3 key
   $apikey = variable_get('getlocations_api3_key', '');
@@ -70,7 +75,7 @@ function getlocations_settings_form() {
   $form['getlocations_preview'] = array(
     '#type' => 'fieldset',
     '#title' => t('Getlocations Preview'),
-    '#description' => t('A preview of the current map settings.<br />You can adjust the default map center, zoom and type by changing the map.<br />For all other changes Save Configuration.'),
+    '#description' => t('A preview of the current map settings.') . '<br />' . t('You can adjust the default Map center, Zoom and Default map type by changing the map.') . '<br />' . t('For all other changes use the form. Remember to Save configuration when you are done.'),
     // This will store all the defaults in one variable.
     '#tree' => FALSE,
   );
@@ -503,6 +508,14 @@ function getlocations_settings_form() {
     128,
     t('Where the InfoBubble javascript file is located.')
   );
+  $form['getlocations_paths']['infobubble_extended_path'] = getlocations_element_path(
+    t('Path to InfoBubble extended javascript file'),
+    $getlocations_paths['infobubble_extended_path'],
+    60,
+    128,
+    t('Where the InfoBubble extended javascript file is located.')
+  );
+
   $form['getlocations_paths']['infowindow_options_path'] = getlocations_element_path(
     t('Path to InfoWindow options javascript file'),
     $getlocations_paths['infowindow_options_path'],
@@ -592,6 +605,14 @@ function getlocations_settings_form() {
     60,
     128,
     t('Where the getlocations preview javascript file is located.')
+  );
+  // geojson
+  $form['getlocations_paths']['getlocations_geojson_path'] = getlocations_element_path(
+    t('Path to getlocations Geojson javascript file'),
+    $getlocations_paths['getlocations_geojson_path'],
+    60,
+    128,
+    t('Where the getlocations geojson javascript file is located.')
   );
 
   $form['getlocations_paths']['getlocations_path'] = getlocations_element_path(
@@ -727,6 +748,7 @@ function getlocations_settings_validate($form, &$form_state) {
  * Rebuild marker js.
  */
 function _getlocations_rebuild_marker_js_submit($form, &$form_state) {
-  getlocations_regenerate_markers();
-  drupal_set_message(t('Marker cache regenerated.'));
+  if (getlocations_regenerate_markers()) {
+    drupal_set_message(t('Marker cache regenerated.'));
+  }
 }

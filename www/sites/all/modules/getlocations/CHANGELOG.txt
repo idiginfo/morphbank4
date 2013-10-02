@@ -1,9 +1,550 @@
-commit 3c602c3
+commit e9a41df
+Author: hutch <hutch@midwales.net>
+Date:   Mon Aug 26 11:04:48 2013 +0100
+
+    added google places check
+
+getlocations.module
+
+commit 09442b2
+Author: hutch <hutch@midwales.net>
+Date:   Fri Aug 23 14:20:34 2013 +0100
+
+    check for markers
+
+getlocations.admin.inc
+getlocations.markerinfo.inc
+getlocations.module
+
+commit c9efbfc
+Author: hutch <hutch@midwales.net>
+Date:   Wed Aug 21 15:13:19 2013 +0100
+
+    fields preview map
+
+CHANGELOG.txt
+modules/getlocations_fields/getlocations_fields.admin.inc
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_fields/js/getlocations_fields_preview.js
+
+commit cfad81f
+Author: hutch <hutch@midwales.net>
+Date:   Wed Aug 21 14:08:21 2013 +0100
+
+    moved call to getlocations_fields_getmap to theme, this fixes validate error bug
+
+modules/getlocations_fields/getlocations_fields.module
+
+commit 74e472b
+Author: hutch <hutch@midwales.net>
+Date:   Wed Aug 21 14:06:13 2013 +0100
+
+    some cleanup
+
+getlocations.module
+
+commit 8686037
+Author: hutch <hutch@midwales.net>
+Date:   Mon Aug 19 17:46:49 2013 +0100
+
+    reorganised translation strings
+
+getlocations.admin.inc
+getlocations.module
+
+commit f51abcf
+Author: hutch <hutch@midwales.net>
+Date:   Mon Aug 19 17:46:10 2013 +0100
+
+    added info to summary
+
+modules/getlocations_fields/getlocations_fields.module
+
+commit 0d2608a
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 18 22:43:34 2013 +0100
+
+    moved getlocations_markerclusterer into getlocations_setup_js
+
+getlocations.module
+
+commit 1da842b
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 18 16:41:03 2013 +0100
+
+    added nodoubleclickzoom and nokeyboard features
+
+getlocations.module
+js/getlocations.js
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_map/getlocations_map.module
+modules/getlocations_search/getlocations_search.module
+
+commit a1add6b
+Author: hutch <hutch@midwales.net>
+Date:   Sat Aug 17 15:24:04 2013 +0100
+
+    google libraries compat with getdirections
+
+getlocations.module
+
+commit 7a07fe9
+Author: hutch <hutch@midwales.net>
+Date:   Fri Aug 16 15:34:09 2013 +0100
+
+    fixed weather bug
+
+getlocations.module
+js/getlocations.js
+
+commit 249f79d
+Author: hutch <hutch@midwales.net>
+Date:   Thu Aug 15 10:05:34 2013 +0100
+
+    added flush cache option
+
+getlocations.admin.inc
+getlocations.module
+
+commit 16a4d50
+Author: hutch <hutch@midwales.net>
+Date:   Mon Aug 12 18:38:06 2013 +0100
+
+    fixed getlocations_map notices
+
+CHANGELOG.txt
+modules/getlocations_map/getlocations_map.module
+
+commit 7be8887
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 11 23:03:40 2013 +0100
+
+    added markers
+
+modules/getlocations_map/getlocations_map.module
+
+commit 0484ff9
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 11 23:02:37 2013 +0100
+
+    added css
+
+modules/getlocations_map/getlocations_map.css
+
+commit b0d81b5
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 11 18:49:46 2013 +0100
+
+    fixed minmaxes
+
+getlocations.module
+
+commit fe7adc9
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 11 08:17:49 2013 +0100
+
+    fixed default value bug in field modules
+
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_map/getlocations_map.module
+
+commit 80103ad
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 11 08:16:06 2013 +0100
+
+    improved comments
+
+getlocations.module
+
+commit 6a53dbf
+Author: hutch <hutch@midwales.net>
+Date:   Thu Aug 8 17:21:07 2013 +0100
+
+    fixed Input form Map center
+
+modules/getlocations_fields/getlocations_fields.module
+
+commit da83677
+Author: hutch <hutch@midwales.net>
+Date:   Thu Aug 8 12:21:23 2013 +0100
+
+    fixed jquery bug
+
+modules/getlocations_fields/js/getlocations_fields_formatter.js
+modules/getlocations_map/js/getlocations_map_formatter.js
+
+commit a1a62fe
+Author: hutch <hutch@midwales.net>
+Date:   Thu Aug 8 09:30:46 2013 +0100
+
+    fixed visual_refresh bug, no longer per map
+
+getlocations.module
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_search/getlocations_search.module
+
+commit d51c5fb
+Author: hutch <hutch@midwales.net>
+Date:   Wed Aug 7 14:35:57 2013 +0100
+
+    added rectangles_apply feature
+
+getlocations.module
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_map/getlocations_map.module
+modules/getlocations_search/getlocations_search.module
+views/getlocations_plugin_style_map.inc
+
+commit 320f117
+Author: hutch <hutch@midwales.net>
+Date:   Wed Aug 7 08:30:05 2013 +0100
+
+    more circles_apply
+
+CHANGELOG.txt
+getlocations.module
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_map/getlocations_map.module
+modules/getlocations_search/getlocations_search.admin.inc
+modules/getlocations_search/getlocations_search.module
+views/getlocations_plugin_style_map.inc
+
+commit c5623b2
+Author: hutch <hutch@midwales.net>
+Date:   Tue Aug 6 19:07:35 2013 +0100
+
+    added circles_apply feature
+
+getlocations.module
+
+commit 5cfdf27
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 4 08:45:52 2013 +0100
+
+    improved help
+
+js/infobubble_options.txt
+
+commit a267271
+Author: hutch <hutch@midwales.net>
+Date:   Sun Aug 4 08:45:25 2013 +0100
+
+    improved preview description
+
+getlocations.admin.inc
+
+commit de95b28
+Author: hutch <hutch@midwales.net>
+Date:   Fri Aug 2 19:42:00 2013 +0100
+
+    added reset to paths for fields and search
+
+modules/getlocations_fields/getlocations_fields.admin.inc
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_search/getlocations_search.admin.inc
+modules/getlocations_search/getlocations_search.module
+
+commit ee9b666
+Author: hutch <hutch@midwales.net>
+Date:   Mon Jul 29 12:27:05 2013 +0100
+
+    added access rule for getlocations_search
+
+CHANGELOG.txt
+modules/getlocations_search/getlocations_search.module
+
+commit 88869b6
+Author: hutch <hutch@midwales.net>
+Date:   Mon Jul 29 09:35:07 2013 +0100
+
+    improved getlocations_search
+
+getlocations.css
+modules/getlocations_search/getlocations_search.admin.inc
+modules/getlocations_search/getlocations_search.module
+modules/getlocations_search/js/getlocations_search_admin.js
+
+commit 120a853
+Author: hutch <hutch@midwales.net>
+Date:   Sun Jul 28 03:10:28 2013 +0100
+
+    added drush
+
+README.txt
+drush/getlocations.drush.inc
+
+commit b40d855
+Author: hutch <hutch@midwales.net>
+Date:   Fri Jul 26 18:54:05 2013 +0100
+
+    Coder review
+
+modules/getlocations_search/getlocations_search.module
+
+commit 3180e23
+Author: hutch <hutch@midwales.net>
+Date:   Fri Jul 26 18:45:58 2013 +0100
+
+    fixed bug in 'type'
+
+modules/getlocations_search/getlocations_search.module
+
+commit e93d8d8
+Author: hutch <hutch@midwales.net>
+Date:   Fri Jul 26 18:45:08 2013 +0100
+
+    added header
+
+modules/getlocations_fields/handlers/getlocations_fields_handler_field_distance.inc
+
+commit 3a5397a
+Author: hutch <hutch@midwales.net>
+Date:   Fri Jul 26 14:34:30 2013 +0100
+
+    added support for location_cck to getlocations_search
+
+modules/getlocations_search/getlocations_search.module
+
+commit 4905f18
+Author: hutch <hutch@midwales.net>
+Date:   Fri Jul 26 09:45:50 2013 +0100
+
+    added getlocations_map module
+
+modules/getlocations_map/README.txt
+modules/getlocations_map/getlocations_map.info
+modules/getlocations_map/getlocations_map.install
+modules/getlocations_map/getlocations_map.module
+modules/getlocations_map/js/getlocations_map_formatter.js
+
+commit 58cb84d
+Author: hutch <hutch@midwales.net>
+Date:   Fri Jul 26 09:45:09 2013 +0100
+
+    more extended infobubble
+
+js/infobubble_extended.js
+js/infobubble_options.txt
+
+commit 0a19300
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 24 21:29:23 2013 +0100
+
+    better addressfield_convert
+
+getlocations.module
+
+commit c9faa0e
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 24 14:34:10 2013 +0100
+
+    marker fix, see #1450132
+
+CHANGELOG.txt
+getlocations.module
+modules/getlocations_fields/getlocations_fields.module
+views/getlocations.views.inc
+views/getlocations_plugin_style_map.inc
+
+commit a228783
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 24 14:33:17 2013 +0100
+
+    more kml fix
+
+modules/getlocations_search/getlocations_search.module
+
+commit 0455b37
+Author: hutch <hutch@midwales.net>
+Date:   Mon Jul 22 23:56:11 2013 +0100
+
+    more kml
+
+CHANGELOG.txt
+getlocations.module
+modules/getlocations_fields/getlocations_fields.module
+views/getlocations_plugin_style_map.inc
+
+commit 518d5af
+Author: hutch <hutch@midwales.net>
+Date:   Sun Jul 21 18:44:56 2013 +0100
+
+    fixed kml
+
+getlocations.module
+
+commit 157a8a5
+Author: hutch <hutch@midwales.net>
+Date:   Sun Jul 21 18:44:34 2013 +0100
+
+    set template to html5
+
+getlocations_box.tpl.php
+
+commit fa9d594
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 17 20:20:54 2013 +0100
+
+    themed getlocations_lidinfo
+
+getlocations.module
+
+commit 083c7f4
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 17 19:07:06 2013 +0100
+
+    fixed infobubbles close bug
+
+js/getlocations.js
+js/getlocations_circles.js
+js/getlocations_polygons.js
+js/getlocations_polylines.js
+js/getlocations_rectangles.js
+
+commit ccf333d
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 17 19:05:11 2013 +0100
+
+    added check for module availability
+
+getlocations.module
+
+commit 892179e
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 17 19:04:32 2013 +0100
+
+    added isFunction check
+
+js/getlocations.js
+
+commit 1feb32c
+Author: hutch <hutch@midwales.net>
+Date:   Tue Jul 16 11:30:50 2013 +0100
+
+    fixed shadow in markerinfo
+
+CHANGELOG.txt
+getlocations.module
+
+commit afada75
+Author: hutch <hutch@midwales.net>
+Date:   Tue Jul 16 08:53:05 2013 +0100
+
+    better geolocation button
+
+CHANGELOG.txt
+getlocations.module
+images/error.png
+images/help.png
+images/info.png
+images/ok.png
+modules/getlocations_search/getlocations_search.admin.inc
+modules/getlocations_search/getlocations_search.module
+modules/getlocations_search/js/getlocations_search.js
+
+commit 06dba3e
+Author: hutch <hutch@midwales.net>
+Date:   Thu Jul 11 13:46:25 2013 +0100
+
+    better settings
+
+views/getlocations.views.inc
+
+commit 3b11518
+Author: hutch <hutch@midwales.net>
+Date:   Thu Jul 11 13:45:49 2013 +0100
+
+    fixed nodezoom
+
+modules/getlocations_fields/getlocations_fields.module
+
+commit 20ca774
+Author: hutch <hutch@midwales.net>
+Date:   Thu Jul 11 10:01:10 2013 +0100
+
+    added another views handler
+
+modules/getlocations_fields/getlocations_fields.info
+modules/getlocations_fields/handlers/getlocations_fields_handler_argument_glid.inc
+modules/getlocations_fields/views/getlocations_fields.views.inc
+
+commit e270ebe
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 10 20:14:28 2013 +0100
+
+    fixed form management js in views
+
+js/getlocations_views.js
+views/getlocations_plugin_style_map.inc
+
+commit 31c4834
+Author: hutch <hutch@midwales.net>
+Date:   Wed Jul 10 09:41:25 2013 +0100
+
+    improved geojson and search_places js
+
+js/getlocations_geojson.js
+js/getlocations_search_places.js
+
+commit 2345e05
+Author: hutch <hutch@midwales.net>
+Date:   Tue Jul 9 18:53:38 2013 +0100
+
+    added geojson support
+
+README.txt
+getlocations.admin.inc
+getlocations.module
+js/getlocations.js
+js/getlocations_admin.js
+js/getlocations_geojson.js
+js/getlocations_search_places.js
+js/getlocations_views.js
+modules/getlocations_fields/getlocations_fields.module
+modules/getlocations_fields/js/getlocations_fields_formatter.js
+modules/getlocations_search/getlocations_search.module
+modules/getlocations_search/js/getlocations_search_admin.js
+views/getlocations_plugin_style_map.inc
+
+commit 181513a
+Author: hutch <hutch@midwales.net>
+Date:   Mon Jul 8 19:42:33 2013 +0100
+
+    added infobubble_extended
+
+getlocations.admin.inc
+getlocations.module
+js/infobubble_extended.js
+js/infobubble_options.txt
+
+commit ba11a6f
+Author: hutch <hutch@midwales.net>
+Date:   Mon Jul 8 19:42:03 2013 +0100
+
+    tidy up
+
+js/getlocations_geo.js
+modules/getlocations_search/getlocations_search.module
+
+commit 15abac8
+Author: hutch <hutch@midwales.net>
+Date:   Sat Jul 6 19:31:25 2013 +0100
+
+    fixed bug in shapes js
+
+CHANGELOG.txt
+js/getlocations_circles.js
+js/getlocations_polygons.js
+js/getlocations_polylines.js
+js/getlocations_rectangles.js
+
+commit 1c061ac
 Author: hutch <hutch@midwales.net>
 Date:   Sat Jul 6 09:20:26 2013 +0100
 
     various cleanups
 
+CHANGELOG.txt
 getlocations.module
 js/getlocations_preview.js
 modules/getlocations_search/getlocations_search.module
