@@ -1,1 +1,9 @@
 /nbproject/
+/drush_commands.txt
+/siteinfo.txt
+/ftpsite
+/imagestore
+/tmp
+/*.buildpath
+/*.project
+/.settings
