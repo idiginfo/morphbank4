@@ -9,7 +9,7 @@
 /**
  * Implements hook_init().
  *
- * Used for intercepting url to determine if services is being called via FURI.
+ * Used for intercepting url to determine if services is being called.
  */
 function bir_init() {
 
@@ -148,7 +148,7 @@ function bir_form_alter(&$form, &$form_state, $form_id) {
 
   // Hide fields we do not want exposed on forms.
   $hidden_fields = array(
-    'furi',
+    'identifier',
     'image_count',
     'external_id',
     'publication_id',
@@ -160,12 +160,6 @@ function bir_form_alter(&$form, &$form_state, $form_id) {
     if (isset($form[$value])) {
       $form[$value]['#type'] = 'hidden';
     }
-  }
-
-  // Unset Anonynmous and Admin from user list.
-  if ($node->type != 'bir_album') {
-    unset($form['contributor'][LANGUAGE_NONE]['#options'][0]);
-    unset($form['contributor'][LANGUAGE_NONE]['#options'][1]);
   }
 }
 
@@ -185,14 +179,16 @@ function bir_fix_enity_reference_list(&$field) {
  * Implements hook_node_insert().
  */
 function bir_node_insert($node) {
+  global $base_url;
+
   $types = bir_get_node_types();
   if (!isset($types[$node->type])) {
     return;
   }
 
-  // Set furi field. Not empty during migration.
-  if (empty($node->furi[LANGUAGE_NONE][0]['value'])) {
-    $node->furi[LANGUAGE_NONE][0]['value'] = $base_url . '/node/' . $node->nid;
+  // Set identifier field. Not empty during migration.
+  if (empty($node->identifier[LANGUAGE_NONE][0]['value'])) {
+    $node->identifier[LANGUAGE_NONE][0]['value'] = $base_url . '/node/' . $node->nid;
   }
 
   // Remove paretheses from title

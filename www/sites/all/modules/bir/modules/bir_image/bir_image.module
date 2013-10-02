@@ -13,14 +13,16 @@ function bir_image_form_bir_image_node_form_alter(&$form, &$form_state, $form_id
 }
 
 /**
- * Inmplements hook_node_insert.
+ * Implements hook_node_insert.
  */
 function bir_image_node_insert($node) {
   if ($node->type != 'bir_image') {
     return;
   }
 
-  bir_image_process_image_upload($node);
+  $image = new BirImage();
+  $image->set_variables($node);
+  $image->insert();
 
   return;
 }
@@ -33,172 +35,11 @@ function bir_image_node_update($node) {
     return;
   }
 
-  if ($node->field_image[LANGUAGE_NONE][0]['fid'] != $node->original->field_image[LANGUAGE_NONE][0]['fid']) {
-    bir_image_process_image_upload($node);
-  }
+  $image = new BirImage();
+  $image->set_variables($node);
+  $image->update();
 
   return;
-}
-
-/**
- * Process uploaded images.
- */
-function bir_image_process_image_upload($node) {
-  global $base_url;
-
-  // Retrieve information for uploaded image file from database.
-  $file = file_load($node->field_image[LANGUAGE_NONE][0]['fid']);
-  $filename = $file->filename;
-
-  list($message, $width, $height, $type) = bir_image_process_remote_image($node, $file);
-  if (!$width) {
-    drupal_set_message($message, 'error');
-    return;
-  }
-
-  // Delete uploaded file an information.
-  file_delete($file, TRUE);
-
-  // Fields to update with original image information.
-  $node->original_file_name[LANGUAGE_NONE][0]['value'] = $filename;
-  $node->creative_commons[LANGUAGE_NONE][0]['value'] = variable_get('creative_commons');
-  $node->image_width[LANGUAGE_NONE][0]['value'] = $width;
-  $node->image_height[LANGUAGE_NONE][0]['value'] = $height;
-  $node->image_type[LANGUAGE_NONE][0]['value'] = $type;
-  $node->furi[LANGUAGE_NONE][0]['value'] = $base_url . '/node/' . $node->nid;
-  $node->standard_image[LANGUAGE_NONE][0]['target_id'] = $node->nid;
-  $node->standard_image[LANGUAGE_NONE][0]['target_type'] = "node";
-
-  // Create new thumb. If file returned, update field_image.
-  $file = bir_image_create_thumb_file($node);
-
-  if ($file) {
-    $node->field_image[LANGUAGE_NONE][0] = (array) $file;
-  }
-
-  // Update node fields.
-  field_attach_update('node', $node);
-
-  return;
-}
-
-/**
- * Process image on image server.
- */
-function bir_image_process_remote_image($node, $file) {
-  // Absolute file path.
-  $wrapper = file_stream_wrapper_get_instance_by_uri($file->uri);
-  $filepath = $wrapper->realpath();
-
-  // Get file information.
-  $fileinfo = pathinfo($file->uri);
-
-  // New file name.
-  $new_file_name = str_replace($fileinfo['filename'], $node->nid, $fileinfo['basename']);
-
-  // Image server.
-  $image_server_url = variable_get('image_server_url', 'http://itest.morphbank.net');
-
-  // Set post array.
-  $post_array = array(
-    'id' => $node->nid,
-    'fileName' => $new_file_name,
-    'image' => "@$filepath;type=$file->filemime",
-  );
-
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_HEADER, 0);
-  curl_setopt($ch, CURLOPT_VERBOSE, 0);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible;)");
-  curl_setopt($ch, CURLOPT_URL, $image_server_url . '/Image/imageFileUpload.php');
-  curl_setopt($ch, CURLOPT_POST, 1);
-  curl_setopt($ch, CURLOPT_POSTFIELDS, $post_array);
-  $response = curl_exec($ch);
-  $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
-
-  if ($code == 400) {
-    return array($response);
-  }
-
-  return explode('^', $response);
-}
-
-/**
- * Create thumbnail for newly uploaded image.
- *
- * @todo Tried sending request to bir-api but returns node bundle type not found
- */
-function bir_image_create_thumb_file($node) {
-  // Set needed variables for thumbnail.
-  $image_server_url = variable_get('image_server_url', 'http://itest.morphbank.net');
-  $image_dir = file_default_scheme() . "://bir_thumbs";
-  $image_file = "{$node->nid}.jpg";
-  $image_uri = "$image_dir/$image_file";
-
-  $url = "$image_server_url/?id=$node->nid&imgType=thumb";
-
-  $request = bir_image_get_all_headers();
-  $header = isset($request['If-Modified-Since']) ? array($request['If-Modified-Since']) : array();
-  $ch = curl_init();
-  $timeout = 0;
-  curl_setopt($ch, CURLOPT_URL, $url);
-  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-  $rawdata = curl_exec($ch);
-  if (curl_errno($ch)) {
-    $theme_path = drupal_get_path('theme', variable_get('theme_default', NULL));
-    $image_file = realpath("$theme_path/images/no-image.png");
-    $handle = fopen($image_file, "rb");
-    $rawdata = fread($handle, filesize($image_file));
-    return FALSE;
-  }
-  curl_close($ch);
-
-  file_prepare_directory($image_dir, FILE_CREATE_DIRECTORY);
-  file_unmanaged_save_data($rawdata, $image_uri, FILE_EXISTS_REPLACE);
-
-  $file = new stdClass();
-  $file->uid = $node->uid;
-  $file->filename = $image_file;
-  $file->uri = $image_uri;
-  $file->filemime = "image/jpeg";
-  $file->status = 1;
-  $file = file_save($file);
-
-  $image_info = image_get_info($image_uri);
-  $file->width = $image_info['width'];
-  $file->height = $image_info['height'];
-
-  return $file;
-}
-
-/**
- * Get headers for server.
- */
-function bir_image_get_all_headers() {
-  if (!function_exists('getallheaders')) {
-    return bir_get_headers_custom();
-  }
-  else {
-    return getallheaders();
-  }
-}
-
-/**
- * Returns request headers.
- */
-function bir_get_headers_custom() {
-  $headers = array();
-  foreach ($_SERVER as $name => $value) {
-    if (substr($name, 0, 5) == 'HTTP_') {
-      $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
-    }
-  }
-  return $headers;
 }
 
 /**
@@ -255,4 +96,88 @@ function bir_image_rest_server_response_formatters_alter(&$formatters) {
 
   $formatters = array_merge($formatters, $images);
 
+}
+
+/**
+ * Function to process images via process images batch.
+ */
+function bir_image_process_images($nids, $operation_details, &$context) {
+  $context['message'] = $operation_details; //Will show what chunk we're on.
+
+  $nodes = entity_load('node', $nids);
+  foreach ($nodes as $node) {
+    $nw = entity_metadata_wrapper('node', $node);
+    $nid = $nw->getIdentifier();
+    $fileName = $nw->original_image_source->value();
+    $width = $nw->image_width->value();
+    $height = $nw->image_height->value();
+    $imageType = bir_image_set_type($nw->image_type->value());
+
+    $data = array(
+      'action' => 'process',
+      'id' => $nid,
+      'fileName' => $fileName,
+      'imageType' => $imageType,
+    );
+    $full_url = url(variable_get('image_server_url'), array('query' => $data));
+    $response = drupal_http_request($full_url);
+
+    if ($response->code >= 400) {
+      drush_print(dt('Error occured when processing !nid: !message ', array('!nid' => $nid, '!message' => $response->error)));
+    }
+
+    list($message, $w, $h) = explode('^', $response->data);
+
+    if (empty($w) || empty($h)) {
+      drush_print(dt('Error occured when processing !nid: !message ', array('!nid' => $nid, '!message' => $message)));
+    }
+
+    // Update node with new width and height information
+    if ($width !== $w || $height !== $h) {
+      $nw->image_width->set($w);
+      $nw->image_height->set($h);
+
+      // Update node fields.
+      field_attach_update('node', $node);
+    }
+  }
+}
+
+/**
+ * Function called when process images batch finished.
+ */
+function bir_image_process_images_finished($success, $results, $operations) {
+  //Let the user know we have finished!
+  print t('Finished processing!');
+}
+
+/**
+ * Return file ext type based on mime.
+ * Values of $type are set in the database via image upload or image import.
+ */
+function bir_image_set_type($type) {
+  switch ($type) {
+    case 'image/dng':
+      $ext = 'dng';
+      break;
+    case 'image/tiff':
+      $ext = 'tiff';
+      break;
+    case 'image/tif':
+      $ext = 'tif';
+      break;
+    case 'image/png';
+      $ext = 'png';
+      break;
+    case 'image/bmp':
+      $ext = 'bmp';
+      break;
+    case 'image/gif':
+      $ext = 'gif';
+      break;
+    default:
+      $ext = 'jpg';
+  }
+
+  return $ext;
 }

@@ -6,6 +6,29 @@
  */
 
 /**
+ * Implements hook_menu().
+ */
+function bir_migrate_menu() {
+  $items = array();
+
+  $items['admin/config/content/bir_migrate'] = array(
+    'title' => 'BIR Migrate',
+    'description' => 'Global Config Settings for BIR Migrate module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bir_migrate_admin_settings'),
+    'file' => 'bir_migrate.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/config/content/location/main'] = array(
+    'title' => 'Main settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+
+/**
  * Removes empty values prior to migrating.
  * @see http://drupal.org/node/1665332
  * @see http://drupal.org/node/1792894
@@ -52,8 +75,8 @@ function bir_migrate_geolocation($entity, $row) {
     'postal_code' => '',
     'country' => $row->country,
     'address' => '',
-    'latitude' => $row->verbatimLatitude,
-    'longitude' => $row->verbatimLongitude,
+    'latitude' => $row->decimalLatitude,
+    'longitude' => $row->decimalLongitude,
     'marker' => '',
   );
 }

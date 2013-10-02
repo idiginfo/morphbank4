@@ -7,7 +7,6 @@ version = 7.x-1.0
 dependencies[] = date_migrate
 dependencies[] = getlocations
 dependencies[] = migrate_extras
-dependencies[] = og
 dependencies[] = profile2
 
 files[] = bir_migrate.module

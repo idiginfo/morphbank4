@@ -4,3 +4,15 @@
  * @file
  * Migration install/uninstall for bir migrate.
  */
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function bir_migrate_uninstall() {
+  // Remove migration variables
+  variable_del('bir_migration_user');
+  variable_del('bir_migration_specimen_file');
+  variable_del('bir_migration_image_file');
+  variable_del('bir_migration_default_node_status');
+}

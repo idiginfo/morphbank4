@@ -250,14 +250,14 @@ function _bir_view_fields_info() {
         'display' => array('settings' => array('weight' => 8)),
       ),
     ),
-    'furi' => array(
+    'identifier' => array(
       'field' => array(
         'cardinality' => 1,
         'type' => 'text',
         'settings' => array('max_length' => 255),
       ),
       'instance' => array(
-        'label' => $t('Foreign object URI'),
+        'label' => $t('Identifier'),
         'cardinality' => 1,
         'type' => 'text_textfield',
         'display' => array('default' => array('type' => 'hidden', 'weight' => 10)),
@@ -286,37 +286,6 @@ function _bir_view_create_entity_references() {
   $t = get_t();
 
   $entityreference_fields = array(
-    array(
-      'field_name' => 'contributor',
-      'label' => $t('Contributor'),
-      'type' => 'entityreference',
-      'module' => 'entityreference',
-      'entity_types' => array(),
-      'foreign keys' => array(
-        'users' => array(
-          'table' => 'users',
-          'columns' => array(
-            'target_id' => 'uid',
-          ),
-        ),
-      ),
-      'indexes' => array(
-        'target_entity' => array(
-          '0' => 'target_id',
-        ),
-        'target_id' => array(
-          '0' => 'target_id',
-        ),
-      ),
-      'settings' => array(
-        'handler_settings' => array(
-          'target_bundles' => array(),
-        ),
-        'handler_submit' => 'Change handler',
-        'target_type' => 'user',
-      ),
-      'translatable' => 0,
-    ),
     array(
       'field_name' => 'standard_image',
       'label' => $t('Standard Image'),
@@ -357,22 +326,6 @@ function _bir_view_create_entity_references() {
   }
 
   $entityreference_instances = array(
-    array(
-      'field_name' => 'contributor',
-      'entity_type' => 'node',
-      'bundle' => 'bir_view',
-      'label' => 'Contributor',
-      'cardinality' => 1,
-      'description' => $t('Select Contributor'),
-      'widget' => array(
-        'type' => 'options_select',
-        'module' => 'options',
-      ),
-      'settings' => array(
-        'target_type' => 'user',
-        'handler_settings' => array('target_bundles' => array()),
-      ),
-    ),
     array(
       'field_name' => 'standard_image',
       'entity_type' => 'node',

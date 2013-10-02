@@ -16,8 +16,16 @@ function bir_admin_settings($form, &$form_state) {
     '#title' => t('Image Server URL'),
     '#size' => 50,
     '#maxlength' => 500,
-    '#default_value' => variable_get('image_server_url', 'http://images.morphbank.net/Image/imageFileUpload.php'),
-    '#description' => t('Image Server URL where images are stored.'),
+    '#default_value' => variable_get('image_server_url', ''),
+    '#description' => t('Image Server URL where images are stored. Include trailing slash.'),
+  );
+  $form['no_image_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Image'),
+    '#size' => 50,
+    '#maxlength' => 500,
+    '#default_value' => variable_get('no_image_name', 'no-image.png'),
+    '#description' => t('Default image shown when no image returned by image server. ("/themes/bir_theme/images/no-image.png")'),
   );
   $form['creative_commons'] = array(
     '#type' => 'textfield',

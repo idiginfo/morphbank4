@@ -141,16 +141,16 @@ function _bir_album_fields() {
   $fields_array = array(
     array(
       'field' => array(
-        'field_name' => 'furi',
+        'field_name' => 'identifier',
         'type' => 'text',
         'cardinality' => 1,
         'settings' => array('max_length' => 255),
       ),
       'instance' => array(
-        'field_name' => 'furi',
+        'field_name' => 'identifier',
         'entity_type' => 'node',
         'bundle' => 'bir_album',
-        'label' => $t('Foreign object URI'),
+        'label' => $t('Identifier'),
         'cardinality' => 1,
         'type' => 'text_textfield',
         'display' => array('default' => array('type' => 'hidden', 'weight' => 19)),
